@@ -1,98 +1,37 @@
 # Test Azure Functions API Endpoints
 
-### Get all products
-GET http://localhost:7071/api/v1/products
-Content-Type: application/json
-
-### Get product by ID
-GET http://localhost:7071/api/v1/products/1
-Content-Type: application/json
-
-### Create new product
-POST http://localhost:7071/api/v1/products
+### Login with Admin User
+POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "name": "Test Product",
-  "code": "TEST001",
-  "brand": "Test Brand",
-  "priceNet": 100.00,
-  "priceIva": 19.00,
-  "priceTotal": 119.00,
-  "priceWarranty": 10.00,
-  "rented": false
+  "username": "admin",
+  "password": "admin123"
 }
 
-### Update existing product
-PUT http://localhost:7071/api/v1/products/1
+### Login with Regular User
+POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "name": "Updated Test Product",
-  "code": "TEST001-UPDATED",
-  "brand": "Updated Brand",
-  "priceNet": 150.00,
-  "priceIva": 28.50,
-  "priceTotal": 178.50,
-  "priceWarranty": 15.00,
-  "rented": true
+  "username": "user",
+  "password": "user123"
 }
 
-### Delete product
-DELETE http://localhost:7071/api/v1/products/1
-Content-Type: application/json
-
-### ========== RENT API ENDPOINTS ==========
-
-### Get all rents
-GET http://localhost:7071/api/funcGetRents
-Content-Type: application/json
-
-### Get active rents only
-GET http://localhost:7071/api/funcGetRents?type=active
-Content-Type: application/json
-
-### Get finished rents only
-GET http://localhost:7071/api/funcGetRents?type=finished
-Content-Type: application/json
-
-### Get rents with search query
-GET http://localhost:7071/api/funcGetRents?type=active&clientName=Darwin
-Content-Type: application/json
-
-### Create new rent
-POST http://localhost:7071/api/funcCreateRent
+### Login with Manager User
+POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "code": "TEST001",
-  "productName": "Test Generator",
-  "quantity": 1,
-  "totalValuePerDay": 15000,
-  "clientRut": "12345678-9",
-  "paymentMethod": "debito",
-  "clientName": "Test Client Name",
-  "warrantyValue": 500000
+  "username": "manager",
+  "password": "manager123"
 }
 
-### Update existing rent
-PUT http://localhost:7071/api/funcUpdateRent?id=8241
+### Login with Invalid Credentials
+POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "productName": "Updated Generator",
-  "totalValuePerDay": 18000,
-  "paymentMethod": "credito"
+  "username": "invalid",
+  "password": "invalid"
 }
-
-### Finish a rent
-PATCH http://localhost:7071/api/funcFinishRent?id=8241
-Content-Type: application/json
-
-{
-  "deliveryDate": "2025-07-20T10:00:00"
-}
-
-### Delete rent
-DELETE http://localhost:7071/api/funcDeleteRent?id=8241
-Content-Type: application/json

@@ -1,42 +1,46 @@
-import { AzureFunction, HttpRequest } from '@azure/functions';
-import { Context } from 'vm';
-import { generateToken } from '../src/shared/jwtHelper';
-import { FunctionHandler } from '../src/application/services/Main';
-import { UserFactory } from '../src/factories/UserFactory';
-import { UserService } from '../src/application/services/UserService';
-import { LogModel } from '../src/domain/entities/LogModel';
+import { AzureFunction, Context, HttpRequest } from '@azure/functions';
+import { Logger } from '../src/shared/Logger';
+import { AuthService } from '../src/application/services/AuthService';
 
 const funcLogin: AzureFunction = async function (
   context: Context,
-  req: HttpRequest,
-  log: LogModel
+  req: HttpRequest
 ): Promise<void> {
-  log.logInfo(`Http function processed request for url "${req.url}"`);
+  const logger = new Logger(context.log);
 
-  const userService: UserService = await UserFactory(log);
-  const users = await userService.getAllUsers(req.query);
-  const user = users.length > 0 ? users[0] : null;
+  try {
+    logger.logInfo(`Login request received from ${req.url}`);
 
-  if (!user) {
+    // Crear instancia del servicio de autenticación
+    const authService = new AuthService(logger);
+
+    // Procesar login
+    const loginResult = await authService.login(req.body);
+
+    if (loginResult.success) {
+      context.res = {
+        status: 200,
+        body: {
+          token: loginResult.token,
+        },
+      };
+    } else {
+      context.res = {
+        status: 401,
+        body: {
+          error: loginResult.error,
+        },
+      };
+    }
+  } catch (error) {
+    logger.logError(`Unexpected error in login function: ${error.message}`);
     context.res = {
-      status: 401,
-      body: JSON.stringify({ error: 'Invalid credentials' }),
+      status: 500,
+      body: {
+        error: 'Internal server error',
+      },
     };
-    return;
   }
-
-  const token = generateToken({
-    id: user.id,
-    role: user.role,
-    name: user.name,
-    username: user.username,
-    membershipPaid: user.membershipPaid,
-  });
-
-  context.res = {
-    status: 200,
-    body: token,
-  };
 };
 
-export = FunctionHandler(funcLogin, true);
+export default funcLogin;
