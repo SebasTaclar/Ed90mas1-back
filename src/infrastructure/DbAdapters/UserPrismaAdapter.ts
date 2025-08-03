@@ -79,7 +79,7 @@ export class UserPrismaAdapter implements IUserDataSource {
     const newUser = await this.prisma.user.create({
       data: {
         email: user.email,
-        password: user.password, // En producción, hashea la contraseña antes
+        password: user.password,
         name: user.name,
         role: user.role,
         membershipPaid: user.membershipPaid,
