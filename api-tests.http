@@ -1,6 +1,15 @@
 # Test Azure Functions API Endpoints
+# All responses follow the standard format:
+# {
+#   "success": boolean,
+#   "message": string,
+#   "data": any,
+#   "errors": string[] (optional),
+#   "timestamp": string,
+#   "statusCode": number
+# }
 
-### Login with Admin User
+### Login with Admin User - Success Response
 POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
@@ -9,7 +18,7 @@ Content-Type: application/json
   "password": "admin123"
 }
 
-### Login with Regular User
+### Login with Regular User - Success Response
 POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
@@ -18,7 +27,7 @@ Content-Type: application/json
   "password": "user123"
 }
 
-### Login with Manager User
+### Login with Manager User - Success Response
 POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
@@ -27,7 +36,7 @@ Content-Type: application/json
   "password": "manager123"
 }
 
-### Login with Invalid Credentials
+### Login with Invalid Credentials - Error Response
 POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
@@ -35,3 +44,17 @@ Content-Type: application/json
   "username": "invalid",
   "password": "invalid"
 }
+
+### Login with Missing Password - Validation Error Response
+POST http://localhost:7071/api/funcLogin
+Content-Type: application/json
+
+{
+  "username": "admin"
+}
+
+### Login with Empty Body - Validation Error Response
+POST http://localhost:7071/api/funcLogin
+Content-Type: application/json
+
+{}
