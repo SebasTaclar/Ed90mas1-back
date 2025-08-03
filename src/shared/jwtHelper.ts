@@ -4,15 +4,15 @@ import { sign, verify } from 'jsonwebtoken';
 const SECRET_KEY = process.env.JWT_SECRET;
 
 export function generateToken(user: {
-  id: string;
+  id: number;
   role: string;
   name: string;
-  username: string;
+  email: string;
   membershipPaid: boolean;
 }): string {
   const payload = {
     id: user.id,
-    username: user.username,
+    email: user.email,
     name: user.name,
     role: user.role,
     membershipPaid: user.membershipPaid,

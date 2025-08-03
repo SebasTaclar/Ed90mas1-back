@@ -14,7 +14,7 @@ POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "username": "admin",
+  "email": "admin@example.com",
   "password": "admin123"
 }
 
@@ -23,7 +23,7 @@ POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "username": "user",
+  "email": "user@example.com",
   "password": "user123"
 }
 
@@ -32,7 +32,7 @@ POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "username": "manager",
+  "email": "manager@example.com",
   "password": "manager123"
 }
 
@@ -41,7 +41,7 @@ POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "username": "invalid",
+  "email": "invalid@example.com",
   "password": "invalid"
 }
 
@@ -50,11 +50,77 @@ POST http://localhost:7071/api/funcLogin
 Content-Type: application/json
 
 {
-  "username": "admin"
+  "email": "admin@example.com"
 }
 
 ### Login with Empty Body - Validation Error Response
 POST http://localhost:7071/api/funcLogin
+Content-Type: application/json
+
+{}
+
+###
+# USER CREATION ENDPOINTS
+###
+
+### Create Admin User - Success Response
+POST http://localhost:7071/api/funcCreateUser
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123",
+  "name": "Administrator",
+  "role": "admin",
+  "membershipPaid": true
+}
+
+### Create Regular User - Success Response
+POST http://localhost:7071/api/funcCreateUser
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "user123",
+  "name": "Regular User",
+  "role": "user",
+  "membershipPaid": false
+}
+
+### Create Manager User - Success Response
+POST http://localhost:7071/api/funcCreateUser
+Content-Type: application/json
+
+{
+  "email": "manager@example.com",
+  "password": "manager123",
+  "name": "Manager User",
+  "role": "manager",
+  "membershipPaid": true
+}
+
+### Create User with Duplicate Email - Error Response
+POST http://localhost:7071/api/funcCreateUser
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin456",
+  "name": "Another Admin",
+  "role": "admin"
+}
+
+### Create User with Missing Fields - Validation Error Response
+POST http://localhost:7071/api/funcCreateUser
+Content-Type: application/json
+
+{
+  "email": "incomplete@example.com",
+  "password": "test123"
+}
+
+### Create User with Empty Body - Validation Error Response
+POST http://localhost:7071/api/funcCreateUser
 Content-Type: application/json
 
 {}

@@ -24,6 +24,7 @@ export const withLogger = (handler: HandlerWithLogger) => {
       url: req.url,
       query: req.query,
       headers: sanitizeHeaders(req.headers),
+      body: sanitizeBody(req.body),
       bodySize: req.body ? JSON.stringify(req.body).length : 0,
       timestamp: new Date().toISOString(),
     });
@@ -67,6 +68,24 @@ const sanitizeHeaders = (headers: unknown): unknown => {
   for (const header of sensitiveHeaders) {
     if (sanitized[header]) {
       sanitized[header] = '[REDACTED]';
+    }
+  }
+
+  return sanitized;
+};
+
+/**
+ * Sanitiza información sensible del body para logging seguro
+ */
+const sanitizeBody = (body: unknown): unknown => {
+  if (!body || typeof body !== 'object' || body === null) return body;
+
+  const sanitized = { ...(body as Record<string, unknown>) };
+  const sensitiveFields = ['password', 'token', 'secret', 'key', 'auth', 'credentials'];
+
+  for (const field of sensitiveFields) {
+    if (sanitized[field]) {
+      sanitized[field] = '[REDACTED]';
     }
   }
 

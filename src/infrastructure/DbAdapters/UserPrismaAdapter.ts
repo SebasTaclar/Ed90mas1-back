@@ -9,44 +9,38 @@ export class UserPrismaAdapter implements IUserDataSource {
   public async getAll(query?: unknown): Promise<User[]> {
     let whereClause: Prisma.UserWhereInput = {};
 
-    // Handle query filtering - similar to LINQ Where clause
+    // Handle query filtering
     if (query && typeof query === 'object') {
       const queryObj = query as Record<string, unknown>;
 
-      // Build dynamic where clause
       whereClause = {
-        ...(typeof queryObj.username === 'string' && {
-          username: { contains: queryObj.username, mode: 'insensitive' as const },
+        ...(typeof queryObj.email === 'string' && {
+          email: { contains: queryObj.email, mode: 'insensitive' as const },
         }),
         ...(typeof queryObj.name === 'string' && {
           name: { contains: queryObj.name, mode: 'insensitive' as const },
         }),
         ...(typeof queryObj.role === 'string' && { role: queryObj.role }),
-        // Add more conditions as needed
+        ...(typeof queryObj.membershipPaid === 'boolean' && {
+          membershipPaid: queryObj.membershipPaid,
+        }),
       };
     }
 
     const users = await this.prisma.user.findMany({
       where: whereClause,
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        username: true,
+        email: true,
         password: true,
         name: true,
         role: true,
         membershipPaid: true,
       },
-      orderBy: { createdAt: 'asc' }, // Similar to LINQ OrderBy
     });
 
-    return users.map((user) => ({
-      id: user.id.toString(),
-      username: user.username,
-      password: user.password,
-      name: user.name,
-      role: user.role,
-      membershipPaid: user.membershipPaid,
-    }));
+    return users as User[];
   }
 
   public async getById(id: string): Promise<User | null> {
@@ -54,7 +48,7 @@ export class UserPrismaAdapter implements IUserDataSource {
       where: { id: parseInt(id) },
       select: {
         id: true,
-        username: true,
+        email: true,
         password: true,
         name: true,
         role: true,
@@ -62,30 +56,37 @@ export class UserPrismaAdapter implements IUserDataSource {
       },
     });
 
-    if (!user) return null;
+    return user as User | null;
+  }
 
-    return {
-      id: user.id.toString(),
-      username: user.username,
-      password: user.password,
-      name: user.name,
-      role: user.role,
-      membershipPaid: user.membershipPaid,
-    };
+  public async getByEmail(email: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        name: true,
+        role: true,
+        membershipPaid: true,
+      },
+    });
+
+    return user as User | null;
   }
 
   public async create(user: User): Promise<User> {
-    const createdUser = await this.prisma.user.create({
+    const newUser = await this.prisma.user.create({
       data: {
-        username: user.username,
-        password: user.password,
+        email: user.email,
+        password: user.password, // En producción, hashea la contraseña antes
         name: user.name,
         role: user.role,
-        membershipPaid: user.membershipPaid || false,
+        membershipPaid: user.membershipPaid,
       },
       select: {
         id: true,
-        username: true,
+        email: true,
         password: true,
         name: true,
         role: true,
@@ -93,14 +94,7 @@ export class UserPrismaAdapter implements IUserDataSource {
       },
     });
 
-    return {
-      id: createdUser.id.toString(),
-      username: createdUser.username,
-      password: createdUser.password,
-      name: createdUser.name,
-      role: createdUser.role,
-      membershipPaid: createdUser.membershipPaid,
-    };
+    return newUser as User;
   }
 
   public async update(id: string, user: Partial<User>): Promise<User | null> {
@@ -108,7 +102,7 @@ export class UserPrismaAdapter implements IUserDataSource {
       const updatedUser = await this.prisma.user.update({
         where: { id: parseInt(id) },
         data: {
-          ...(user.username && { username: user.username }),
+          ...(user.email && { email: user.email }),
           ...(user.password && { password: user.password }),
           ...(user.name && { name: user.name }),
           ...(user.role && { role: user.role }),
@@ -116,7 +110,7 @@ export class UserPrismaAdapter implements IUserDataSource {
         },
         select: {
           id: true,
-          username: true,
+          email: true,
           password: true,
           name: true,
           role: true,
@@ -124,17 +118,12 @@ export class UserPrismaAdapter implements IUserDataSource {
         },
       });
 
-      return {
-        id: updatedUser.id.toString(),
-        username: updatedUser.username,
-        password: updatedUser.password,
-        name: updatedUser.name,
-        role: updatedUser.role,
-        membershipPaid: updatedUser.membershipPaid,
-      };
+      return updatedUser as User | null;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        return null; // Record not found
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          return null; // User not found
+        }
       }
       throw error;
     }
@@ -147,64 +136,12 @@ export class UserPrismaAdapter implements IUserDataSource {
       });
       return true;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        return false; // Record not found
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          return false; // User not found
+        }
       }
       throw error;
     }
-  }
-
-  // Additional LINQ-like methods
-  public async findByUsername(username: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
-      select: {
-        id: true,
-        username: true,
-        password: true,
-        name: true,
-        role: true,
-        membershipPaid: true,
-      },
-    });
-
-    if (!user) return null;
-
-    return {
-      id: user.id.toString(),
-      username: user.username,
-      password: user.password,
-      name: user.name,
-      role: user.role,
-      membershipPaid: user.membershipPaid,
-    };
-  }
-
-  public async findByRole(role: string): Promise<User[]> {
-    const users = await this.prisma.user.findMany({
-      where: { role },
-      select: {
-        id: true,
-        username: true,
-        password: true,
-        name: true,
-        role: true,
-        membershipPaid: true,
-      },
-      orderBy: { name: 'asc' },
-    });
-
-    return users.map((user) => ({
-      id: user.id.toString(),
-      username: user.username,
-      password: user.password,
-      name: user.name,
-      role: user.role,
-      membershipPaid: user.membershipPaid,
-    }));
-  }
-
-  public async count(where?: Prisma.UserWhereInput): Promise<number> {
-    return this.prisma.user.count({ where });
   }
 }
