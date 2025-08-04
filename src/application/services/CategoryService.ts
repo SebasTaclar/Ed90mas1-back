@@ -1,4 +1,5 @@
 import { ICategoryDataSource } from '../../domain/interfaces/ICategoryDataSource';
+import { ITournamentDataSource } from '../../domain/interfaces/ITournamentDataSource';
 import {
   Category,
   CreateCategoryRequest,
@@ -9,6 +10,7 @@ import { Logger } from '../../shared/Logger';
 export class CategoryService {
   constructor(
     private categoryDataSource: ICategoryDataSource,
+    private tournamentDataSource: ITournamentDataSource,
     private logger: Logger
   ) {}
 
@@ -126,6 +128,15 @@ export class CategoryService {
     const existingCategory = await this.categoryDataSource.findById(id);
     if (!existingCategory) {
       throw new Error('Category not found');
+    }
+
+    // Check if category is associated with any tournaments
+    const associatedTournaments = await this.tournamentDataSource.findByCategory(id);
+    if (associatedTournaments.length > 0) {
+      const tournamentNames = associatedTournaments.map((t) => t.name).join(', ');
+      throw new Error(
+        `Cannot delete category "${existingCategory.name}" because it is associated with ${associatedTournaments.length} tournament(s): ${tournamentNames}. Please remove the category from these tournaments first.`
+      );
     }
 
     await this.categoryDataSource.delete(id);

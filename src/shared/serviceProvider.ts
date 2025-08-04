@@ -70,7 +70,8 @@ export class ServiceProvider {
    */
   static getCategoryService(logger: Logger): CategoryService {
     const categoryDataSource = this.getCategoryDataSource(logger);
-    return new CategoryService(categoryDataSource, logger);
+    const tournamentDataSource = this.getTournamentDataSource(logger);
+    return new CategoryService(categoryDataSource, tournamentDataSource, logger);
   }
 
   /**
@@ -79,7 +80,8 @@ export class ServiceProvider {
   static getTournamentService(logger: Logger): TournamentService {
     const tournamentDataSource = this.getTournamentDataSource(logger);
     const categoryDataSource = this.getCategoryDataSource(logger);
-    return new TournamentService(tournamentDataSource, categoryDataSource, logger);
+    const teamDataSource = this.getTeamDataSource(logger);
+    return new TournamentService(tournamentDataSource, categoryDataSource, teamDataSource, logger);
   }
 
   /**

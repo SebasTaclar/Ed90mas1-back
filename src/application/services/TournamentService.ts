@@ -1,5 +1,6 @@
 import { ITournamentDataSource } from '../../domain/interfaces/ITournamentDataSource';
 import { ICategoryDataSource } from '../../domain/interfaces/ICategoryDataSource';
+import { ITeamDataSource } from '../../domain/interfaces/ITeamDataSource';
 import {
   Tournament,
   CreateTournamentRequest,
@@ -11,6 +12,7 @@ export class TournamentService {
   constructor(
     private tournamentDataSource: ITournamentDataSource,
     private categoryDataSource: ICategoryDataSource,
+    private teamDataSource: ITeamDataSource,
     private logger: Logger
   ) {}
 
@@ -232,6 +234,14 @@ export class TournamentService {
     const existingTournament = await this.tournamentDataSource.findById(id);
     if (!existingTournament) {
       throw new Error('Tournament not found');
+    }
+
+    // Check if tournament has teams associated
+    const associatedTeams = await this.teamDataSource.findByTournament(id);
+    if (associatedTeams.length > 0) {
+      throw new Error(
+        `Cannot delete tournament "${existingTournament.name}" because it has ${associatedTeams.length} team(s) associated. Please remove all teams from the tournament first.`
+      );
     }
 
     await this.tournamentDataSource.delete(id);
