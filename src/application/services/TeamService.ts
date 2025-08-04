@@ -1,5 +1,6 @@
 import { ITeamDataSource } from '../../domain/interfaces/ITeamDataSource';
 import { ITournamentDataSource } from '../../domain/interfaces/ITournamentDataSource';
+import { IUserDataSource } from '../../domain/interfaces/IUserDataSource';
 import {
   Team,
   CreateTeamRequest,
@@ -12,6 +13,7 @@ export class TeamService {
   constructor(
     private teamDataSource: ITeamDataSource,
     private tournamentDataSource: ITournamentDataSource,
+    private userDataSource: IUserDataSource,
     private logger: Logger
   ) {}
 
@@ -127,6 +129,28 @@ export class TeamService {
     return teams;
   }
 
+  async getTeams(tournamentId?: string): Promise<TeamWithRelations[]> {
+    this.logger.logInfo('TeamService: Getting teams with filters', { tournamentId });
+
+    if (tournamentId) {
+      // Validate tournament ID format
+      const tournamentIdNum = parseInt(tournamentId);
+      if (isNaN(tournamentIdNum)) {
+        throw new Error('Invalid tournament ID format');
+      }
+
+      if (tournamentIdNum <= 0) {
+        throw new Error('Tournament ID must be a positive number');
+      }
+
+      // Use existing method for tournament-specific teams
+      return await this.getTeamsByTournament(tournamentIdNum);
+    } else {
+      // Use existing method for all teams
+      return await this.getAllTeams();
+    }
+  }
+
   async getTeamByUserId(userId: number): Promise<Team | null> {
     this.logger.logInfo('TeamService: Getting team by user ID', { userId });
 
@@ -161,8 +185,16 @@ export class TeamService {
     return teams;
   }
 
-  async updateTeam(id: number, teamData: UpdateTeamRequest): Promise<Team> {
-    this.logger.logInfo('TeamService: Updating team', { id, data: teamData });
+  async updateTeam(
+    id: number,
+    teamData: UpdateTeamRequest,
+    authenticatedUser?: { id: string; role: string; email: string }
+  ): Promise<Team> {
+    this.logger.logInfo('TeamService: Updating team', {
+      id,
+      data: teamData,
+      requestedBy: authenticatedUser?.email,
+    });
 
     if (!id || id <= 0) {
       throw new Error('Valid team ID is required');
@@ -172,6 +204,16 @@ export class TeamService {
     const existingTeam = await this.teamDataSource.findById(id);
     if (!existingTeam) {
       throw new Error('Team not found');
+    }
+
+    // Authorization check: only admins or the team owner can update
+    if (authenticatedUser) {
+      if (
+        authenticatedUser.role !== 'admin' &&
+        authenticatedUser.id !== existingTeam.user.id.toString()
+      ) {
+        throw new Error('Forbidden: You can only update your own team');
+      }
     }
 
     // Validate name if provided
@@ -191,8 +233,9 @@ export class TeamService {
 
     // Validate logoPath if provided
     if (teamData.logoPath !== undefined) {
-      if (typeof teamData.logoPath === 'string' && teamData.logoPath.trim().length === 0) {
-        throw new Error('Logo path cannot be empty string');
+      // Allow empty string to clear the logo, but validate non-empty strings
+      if (typeof teamData.logoPath === 'string' && teamData.logoPath.trim().length > 0) {
+        // Optional: Add validation for valid file path format if needed
       }
     }
 
@@ -255,9 +298,25 @@ export class TeamService {
       throw new Error('Team not found');
     }
 
+    // Get the user ID before deleting the team
+    const userId = existingTeam.user.id;
+
+    this.logger.logInfo('TeamService: Deleting team and associated user', {
+      teamId: id,
+      userId: userId,
+      userEmail: existingTeam.user.email,
+    });
+
+    // Delete the team first (this will also delete related records due to foreign key constraints)
     await this.teamDataSource.delete(id);
 
-    this.logger.logInfo('TeamService: Team deleted successfully', { id });
+    // Delete the associated user
+    await this.userDataSource.delete(userId.toString());
+
+    this.logger.logInfo('TeamService: Team and user deleted successfully', {
+      teamId: id,
+      userId: userId,
+    });
   }
 
   async addTeamToTournaments(teamId: number, tournamentIds: number[]): Promise<void> {

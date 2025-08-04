@@ -1,6 +1,7 @@
-﻿import * as bcrypt from 'bcrypt';
-import { generateToken } from '../../shared/jwtHelper';
+﻿import { generateToken } from '../../shared/jwtHelper';
 import { Logger } from '../../shared/Logger';
+import { PasswordUtils } from '../../shared/PasswordUtils';
+import { USER_ROLES } from '../../shared/UserRoles';
 import { ValidationError, AuthenticationError } from '../../shared/exceptions';
 import { IUserDataSource } from '../../domain/interfaces/IUserDataSource';
 
@@ -52,8 +53,8 @@ export class AuthService {
       throw new AuthenticationError('Invalid credentials');
     }
 
-    // Validate password using bcrypt
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    // Validate password using centralized utility
+    const isValidPassword = await PasswordUtils.comparePassword(password, user.password);
 
     if (!isValidPassword) {
       this.logger.logWarning(`Login failed for user: ${email} - invalid password`);
@@ -83,6 +84,9 @@ export class AuthService {
       throw new ValidationError('Email, password, name, and role are required');
     }
 
+    // Validate password requirements
+    PasswordUtils.validatePassword(password);
+
     // Check if user already exists
     const existingUser = await this.userDataSource.getByEmail(email);
     if (existingUser) {
@@ -90,9 +94,8 @@ export class AuthService {
       throw new ValidationError('Email already exists');
     }
 
-    // Hash password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hash password using centralized utility
+    const hashedPassword = await PasswordUtils.hashPassword(password);
 
     // Create user object
     const newUser = {

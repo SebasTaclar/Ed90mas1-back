@@ -5,8 +5,8 @@
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": ["post"],
-      "route": "v1/teams"
+      "methods": ["delete"],
+      "route": "v1/teams/{id:int}"
     },
     {
       "type": "http",
@@ -14,5 +14,5 @@
       "name": "res"
     }
   ],
-  "scriptFile": "../dist/funcCreateTeam/index.js"
+  "scriptFile": "../dist/funcDeleteTeam/index.js"
 }

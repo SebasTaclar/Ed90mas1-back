@@ -5,7 +5,7 @@
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": ["post"],
+      "methods": ["get"],
       "route": "v1/teams"
     },
     {
@@ -14,5 +14,5 @@
       "name": "res"
     }
   ],
-  "scriptFile": "../dist/funcCreateTeam/index.js"
+  "scriptFile": "../dist/funcGetTeams/index.js"
 }

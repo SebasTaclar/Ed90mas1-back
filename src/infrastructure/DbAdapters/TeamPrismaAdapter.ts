@@ -7,6 +7,8 @@ import {
   TeamWithRelations,
 } from '../../domain/entities/Team';
 import { Logger } from '../../shared/Logger';
+import { PasswordUtils } from '../../shared/PasswordUtils';
+import { USER_ROLES } from '../../shared/UserRoles';
 import { UserPrismaAdapter } from './UserPrismaAdapter';
 
 export class TeamPrismaAdapter implements ITeamDataSource {
@@ -24,17 +26,21 @@ export class TeamPrismaAdapter implements ITeamDataSource {
       });
 
       return await this.prisma.$transaction(async (tx) => {
-        // 1. Create the user first
+        // 1. Validate and hash the password using centralized utility
+        PasswordUtils.validatePassword(teamData.userPassword);
+        const hashedPassword = await PasswordUtils.hashPassword(teamData.userPassword);
+
+        // 2. Create the user first with 'team' role
         const user = await this.userAdapter.create({
           id: 0, // Will be auto-generated
           email: teamData.userEmail,
-          password: teamData.userPassword,
+          password: hashedPassword,
           name: teamData.userName,
-          role: 'team_user', // Special role for team users
+          role: USER_ROLES.TEAM, // Role for team users
           membershipPaid: false,
         });
 
-        // 2. Create the team
+        // 3. Create the team
         const team = await tx.team.create({
           data: {
             name: teamData.name,

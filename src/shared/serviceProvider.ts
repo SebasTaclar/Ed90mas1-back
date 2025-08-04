@@ -90,7 +90,8 @@ export class ServiceProvider {
   static getTeamService(logger: Logger): TeamService {
     const teamDataSource = this.getTeamDataSource(logger);
     const tournamentDataSource = this.getTournamentDataSource(logger);
-    return new TeamService(teamDataSource, tournamentDataSource, logger);
+    const userDataSource = this.getUserDataSource();
+    return new TeamService(teamDataSource, tournamentDataSource, userDataSource, logger);
   }
 }
 
