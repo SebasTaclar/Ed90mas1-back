@@ -64,13 +64,12 @@ export const withAuth = (handler: HandlerWithAuth) => {
 
       if (
         errorMessage.toLowerCase().includes('unauthorized') ||
-        errorMessage.toLowerCase().includes('invalid token') ||
-        errorMessage.toLowerCase().includes('missing')
+        errorMessage.toLowerCase().includes('invalid token')
       ) {
         return ApiResponseBuilder.error('Unauthorized: Invalid or expired token', 401);
       }
 
-      return ApiResponseBuilder.error('Authentication error', 500);
+      return ApiResponseBuilder.error(`Error: ${errorMessage}`, 500);
     }
   };
 };
