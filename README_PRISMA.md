@@ -1,4 +1,4 @@
-# AYPSPA Backend - Multi-Database Support
+# ED90MAS1 Backend - Multi-Database Support
 
 This Azure Functions application supports **MongoDB** and **Prisma ORM** as data sources.
 
@@ -57,7 +57,7 @@ npm start
   "Values": {
     "DATABASE_TYPE": "mongodb",
     "MONGO_DB_URI": "mongodb://localhost:27017",
-    "MONGO_DB_DATABASE": "aypspa"
+    "MONGO_DB_DATABASE": "ed90mas1"
   }
 }
 ```

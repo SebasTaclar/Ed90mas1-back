@@ -8,6 +8,9 @@
 #   "timestamp": string,
 #   "statusCode": number
 # }
+# 
+# ⚠️ IMPORTANTE: Los endpoints de USER CREATION ahora requieren autenticación JWT
+# Para pruebas con autenticación, usar el archivo: api-tests-with-auth.http
 
 ### Login with Admin User - Success Response
 POST http://localhost:7071/api/funcLogin

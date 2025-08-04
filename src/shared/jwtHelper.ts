@@ -24,14 +24,16 @@ export function generateToken(user: {
 
 export function verifyToken(token: string): {
   id: string;
-  username: string;
+  email: string;
+  name: string;
   role: string;
   membershipPaid: boolean;
 } {
   try {
     return verify(token, SECRET_KEY) as {
       id: string;
-      username: string;
+      email: string;
+      name: string;
       role: string;
       membershipPaid: boolean;
     };
