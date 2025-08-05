@@ -5,8 +5,10 @@ import { ValidationError } from './exceptions';
 export class BlobStorageService {
   private teamLogosContainer: ContainerClient;
   private tournamentBannersContainer: ContainerClient;
+  private playerPhotosContainer: ContainerClient;
   private readonly teamLogosContainerName = 'team-logos';
   private readonly tournamentBannersContainerName = 'tournament-banners';
+  private readonly playerPhotosContainerName = 'player-photos';
 
   constructor(private logger: Logger) {
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
@@ -20,6 +22,9 @@ export class BlobStorageService {
     this.tournamentBannersContainer = blobServiceClient.getContainerClient(
       this.tournamentBannersContainerName
     );
+    this.playerPhotosContainer = blobServiceClient.getContainerClient(
+      this.playerPhotosContainerName
+    );
 
     // Crear contenedores si no existen
     this.initializeContainers();
@@ -31,6 +36,9 @@ export class BlobStorageService {
         access: 'blob', // Permite acceso público a las imágenes
       });
       await this.tournamentBannersContainer.createIfNotExists({
+        access: 'blob', // Permite acceso público a las imágenes
+      });
+      await this.playerPhotosContainer.createIfNotExists({
         access: 'blob', // Permite acceso público a las imágenes
       });
       this.logger.logInfo('Blob containers initialized successfully');
@@ -218,6 +226,71 @@ export class BlobStorageService {
       this.logger.logInfo('Tournament banner deleted successfully', { fileName });
     } catch (error) {
       this.logger.logError('Error deleting tournament banner', error);
+      throw error;
+    }
+  }
+
+  async uploadPlayerPhoto(
+    playerId: number,
+    fileBuffer: Buffer,
+    fileName: string,
+    contentType: string
+  ): Promise<string> {
+    try {
+      this.logger.logInfo('Starting player photo upload', {
+        playerId,
+        fileName,
+        contentType,
+        fileSize: fileBuffer.length,
+      });
+
+      if (!this.isValidImageType(contentType)) {
+        throw new ValidationError('Invalid file type. Only PNG and JPEG are supported');
+      }
+
+      // Crear nombre único para el archivo
+      const timestamp = Date.now();
+      const fileExtension = this.getFileExtension(fileName);
+      const uniqueFileName = `player-${playerId}-${timestamp}${fileExtension}`;
+
+      const blockBlobClient = this.playerPhotosContainer.getBlockBlobClient(uniqueFileName);
+
+      await blockBlobClient.uploadData(fileBuffer, {
+        blobHTTPHeaders: {
+          blobContentType: contentType,
+        },
+      });
+
+      const photoUrl = blockBlobClient.url;
+
+      this.logger.logInfo('Player photo uploaded successfully', {
+        playerId,
+        fileName: uniqueFileName,
+        url: photoUrl,
+      });
+
+      return photoUrl;
+    } catch (error) {
+      this.logger.logError('Error uploading player photo', error);
+      throw error;
+    }
+  }
+
+  async deletePlayerPhoto(photoUrl: string): Promise<void> {
+    try {
+      // Extraer nombre del archivo de la URL
+      const fileName = this.extractFileNameFromUrl(photoUrl);
+
+      if (!fileName) {
+        throw new ValidationError('Invalid photo URL');
+      }
+
+      const blockBlobClient = this.playerPhotosContainer.getBlockBlobClient(fileName);
+      await blockBlobClient.deleteIfExists();
+
+      this.logger.logInfo('Player photo deleted successfully', { fileName });
+    } catch (error) {
+      this.logger.logError('Error deleting player photo', error);
       throw error;
     }
   }

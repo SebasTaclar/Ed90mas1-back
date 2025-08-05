@@ -4,15 +4,18 @@ import { HealthService } from '../application/services/HealthService';
 import { CategoryService } from '../application/services/CategoryService';
 import { TournamentService } from '../application/services/TournamentService';
 import { TeamService } from '../application/services/TeamService';
+import { PlayerService } from '../application/services/PlayerService';
 import { BlobStorageService } from './BlobStorageService';
 import { UserPrismaAdapter } from '../infrastructure/DbAdapters/UserPrismaAdapter';
 import { CategoryPrismaAdapter } from '../infrastructure/DbAdapters/CategoryPrismaAdapter';
 import { TournamentPrismaAdapter } from '../infrastructure/DbAdapters/TournamentPrismaAdapter';
 import { TeamPrismaAdapter } from '../infrastructure/DbAdapters/TeamPrismaAdapter';
+import { PlayerPrismaAdapter } from '../infrastructure/DbAdapters/PlayerPrismaAdapter';
 import { IUserDataSource } from '../domain/interfaces/IUserDataSource';
 import { ICategoryDataSource } from '../domain/interfaces/ICategoryDataSource';
 import { ITournamentDataSource } from '../domain/interfaces/ITournamentDataSource';
 import { ITeamDataSource } from '../domain/interfaces/ITeamDataSource';
+import { IPlayerDataSource } from '../domain/interfaces/IPlayerDataSource';
 import { getPrismaClient } from '../config/PrismaClient';
 
 /**
@@ -49,6 +52,13 @@ export class ServiceProvider {
   static getTeamDataSource(logger: Logger): ITeamDataSource {
     const userAdapter = new UserPrismaAdapter();
     return new TeamPrismaAdapter(this.prismaClient, logger, userAdapter);
+  }
+
+  /**
+   * Crea una instancia de PlayerDataSource
+   */
+  static getPlayerDataSource(logger: Logger): IPlayerDataSource {
+    return new PlayerPrismaAdapter(this.prismaClient, logger);
   }
 
   /**
@@ -96,6 +106,15 @@ export class ServiceProvider {
   }
 
   /**
+   * Crea una instancia de PlayerService con sus dependencias inyectadas
+   */
+  static getPlayerService(logger: Logger): PlayerService {
+    const playerDataSource = this.getPlayerDataSource(logger);
+    const teamDataSource = this.getTeamDataSource(logger);
+    return new PlayerService(playerDataSource, teamDataSource, logger);
+  }
+
+  /**
    * Crea una instancia de BlobStorageService
    */
   static getBlobStorageService(logger: Logger): BlobStorageService {
@@ -122,6 +141,10 @@ export const getTournamentService = (logger: Logger): TournamentService => {
 
 export const getTeamService = (logger: Logger): TeamService => {
   return ServiceProvider.getTeamService(logger);
+};
+
+export const getPlayerService = (logger: Logger): PlayerService => {
+  return ServiceProvider.getPlayerService(logger);
 };
 
 export const getUserDataSource = (): IUserDataSource => {

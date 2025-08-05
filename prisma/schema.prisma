@@ -59,9 +59,30 @@ model Team {
   updatedAt       DateTime         @updatedAt @map("updated_at")
   logoPath        String?          @map("logo_path")
   teamTournaments TeamTournament[]
+  players         Player[]
   user            User             @relation(fields: [userId], references: [id])
 
   @@map("teams")
+}
+
+model Player {
+  id               Int      @id @default(autoincrement())
+  firstName        String   @map("first_name")
+  lastName         String   @map("last_name")
+  email            String   @unique
+  phone            String?
+  dateOfBirth      DateTime @map("date_of_birth")
+  position         String?
+  jerseyNumber     Int?     @map("jersey_number")
+  isActive         Boolean  @default(true) @map("is_active")
+  teamId           Int      @map("team_id")
+  profilePhotoPath String?  @map("profile_photo_path")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  team             Team     @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, jerseyNumber], name: "unique_jersey_per_team")
+  @@map("players")
 }
 
 model TournamentCategory {
