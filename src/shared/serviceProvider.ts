@@ -4,6 +4,7 @@ import { HealthService } from '../application/services/HealthService';
 import { CategoryService } from '../application/services/CategoryService';
 import { TournamentService } from '../application/services/TournamentService';
 import { TeamService } from '../application/services/TeamService';
+import { BlobStorageService } from './BlobStorageService';
 import { UserPrismaAdapter } from '../infrastructure/DbAdapters/UserPrismaAdapter';
 import { CategoryPrismaAdapter } from '../infrastructure/DbAdapters/CategoryPrismaAdapter';
 import { TournamentPrismaAdapter } from '../infrastructure/DbAdapters/TournamentPrismaAdapter';
@@ -93,6 +94,13 @@ export class ServiceProvider {
     const userDataSource = this.getUserDataSource();
     return new TeamService(teamDataSource, tournamentDataSource, userDataSource, logger);
   }
+
+  /**
+   * Crea una instancia de BlobStorageService
+   */
+  static getBlobStorageService(logger: Logger): BlobStorageService {
+    return new BlobStorageService(logger);
+  }
 }
 
 // Export directo de las funciones más usadas para mayor conveniencia
@@ -118,4 +126,8 @@ export const getTeamService = (logger: Logger): TeamService => {
 
 export const getUserDataSource = (): IUserDataSource => {
   return ServiceProvider.getUserDataSource();
+};
+
+export const getBlobStorageService = (logger: Logger): BlobStorageService => {
+  return ServiceProvider.getBlobStorageService(logger);
 };
