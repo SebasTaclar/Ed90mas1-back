@@ -213,6 +213,9 @@ export class TournamentService {
     if (tournamentData.isActive !== undefined) {
       updateData.isActive = tournamentData.isActive;
     }
+    if (tournamentData.bannerPath !== undefined) {
+      updateData.bannerPath = tournamentData.bannerPath;
+    }
     if (tournamentData.categoryIds !== undefined) {
       updateData.categoryIds = [...new Set(tournamentData.categoryIds)]; // Remove duplicates
     }

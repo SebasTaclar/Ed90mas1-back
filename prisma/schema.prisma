@@ -41,6 +41,7 @@ model Tournament {
   endDate              DateTime             @map("end_date")
   maxTeams             Int                  @map("max_teams")
   isActive             Boolean              @default(true) @map("is_active")
+  bannerPath           String?              @map("banner_path")
   createdAt            DateTime             @default(now()) @map("created_at")
   updatedAt            DateTime             @updatedAt @map("updated_at")
   teamTournaments      TeamTournament[]

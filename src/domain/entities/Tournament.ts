@@ -6,6 +6,7 @@ export interface Tournament {
   endDate: Date;
   maxTeams: number;
   isActive: boolean;
+  bannerPath?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,6 +17,7 @@ export interface CreateTournamentRequest {
   startDate: Date;
   endDate: Date;
   maxTeams: number;
+  bannerPath?: string;
   categoryIds: number[]; // IDs de las categorías asociadas
 }
 
@@ -26,5 +28,6 @@ export interface UpdateTournamentRequest {
   endDate?: Date;
   maxTeams?: number;
   isActive?: boolean;
+  bannerPath?: string;
   categoryIds?: number[];
 }

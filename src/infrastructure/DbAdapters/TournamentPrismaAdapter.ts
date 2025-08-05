@@ -25,6 +25,7 @@ export class TournamentPrismaAdapter implements ITournamentDataSource {
           startDate: tournamentData.startDate,
           endDate: tournamentData.endDate,
           maxTeams: tournamentData.maxTeams,
+          bannerPath: tournamentData.bannerPath,
           tournamentCategories: {
             create: tournamentData.categoryIds.map((categoryId) => ({
               categoryId,
