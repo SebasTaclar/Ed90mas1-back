@@ -1,7 +1,6 @@
 ﻿import { generateToken } from '../../shared/jwtHelper';
 import { Logger } from '../../shared/Logger';
 import { PasswordUtils } from '../../shared/PasswordUtils';
-import { USER_ROLES } from '../../shared/UserRoles';
 import { ValidationError, AuthenticationError } from '../../shared/exceptions';
 import { IUserDataSource } from '../../domain/interfaces/IUserDataSource';
 
