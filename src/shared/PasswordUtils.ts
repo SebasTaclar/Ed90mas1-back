@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcrypt';
+import { ValidationError } from './exceptions';
 
 /**
  * Utilidades para manejo de contraseñas
@@ -28,19 +29,19 @@ export class PasswordUtils {
   /**
    * Valida que una contraseña cumpla con los requisitos mínimos
    * @param password - La contraseña a validar
-   * @throws Error si la contraseña no es válida
+   * @throws ValidationError si la contraseña no es válida
    */
   static validatePassword(password: string): void {
     if (!password || password.trim().length === 0) {
-      throw new Error('Password is required');
+      throw new ValidationError('Password is required');
     }
 
     if (password.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+      throw new ValidationError('Password must be at least 6 characters long');
     }
 
     if (password.length > 128) {
-      throw new Error('Password cannot exceed 128 characters');
+      throw new ValidationError('Password cannot exceed 128 characters');
     }
   }
 }

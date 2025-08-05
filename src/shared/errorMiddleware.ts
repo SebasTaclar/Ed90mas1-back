@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   AuthorizationError,
   NotFoundError,
+  ConflictError,
 } from './exceptions';
 
 export const withErrorHandler = <T extends unknown[]>(
@@ -26,6 +27,18 @@ export const withErrorHandler = <T extends unknown[]>(
 const handleError = (error: unknown, context: Context) => {
   const logger = new Logger(context.log);
 
+  // Logging detallado para debugging
+  logger.logError('Error details', {
+    errorType: error?.constructor?.name,
+    isValidationError: error instanceof ValidationError,
+    isAuthenticationError: error instanceof AuthenticationError,
+    isAuthorizationError: error instanceof AuthorizationError,
+    isNotFoundError: error instanceof NotFoundError,
+    isConflictError: error instanceof ConflictError,
+    isAppError: error instanceof AppError,
+    message: error instanceof Error ? error.message : String(error),
+  });
+
   if (error instanceof ValidationError) {
     return ApiResponseBuilder.error(error.message, 400);
   }
@@ -40,6 +53,10 @@ const handleError = (error: unknown, context: Context) => {
 
   if (error instanceof NotFoundError) {
     return ApiResponseBuilder.error(error.message, 404);
+  }
+
+  if (error instanceof ConflictError) {
+    return ApiResponseBuilder.error(error.message, 409);
   }
 
   if (error instanceof AppError) {

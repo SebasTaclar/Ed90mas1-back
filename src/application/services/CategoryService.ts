@@ -6,6 +6,7 @@ import {
   UpdateCategoryRequest,
 } from '../../domain/entities/Category';
 import { Logger } from '../../shared/Logger';
+import { ValidationError, NotFoundError, ConflictError } from '../../shared/exceptions';
 
 export class CategoryService {
   constructor(
@@ -19,21 +20,21 @@ export class CategoryService {
 
     // Validate input
     if (!categoryData.name || categoryData.name.trim().length === 0) {
-      throw new Error('Category name is required');
+      throw new ValidationError('Category name is required');
     }
 
     if (categoryData.name.trim().length < 2) {
-      throw new Error('Category name must be at least 2 characters long');
+      throw new ValidationError('Category name must be at least 2 characters long');
     }
 
     if (categoryData.name.trim().length > 100) {
-      throw new Error('Category name cannot exceed 100 characters');
+      throw new ValidationError('Category name cannot exceed 100 characters');
     }
 
     // Check if category name already exists
     const existingCategory = await this.categoryDataSource.findByName(categoryData.name.trim());
     if (existingCategory) {
-      throw new Error('Category name already exists');
+      throw new ConflictError('Category name already exists');
     }
 
     const category = await this.categoryDataSource.create({
@@ -49,12 +50,12 @@ export class CategoryService {
     this.logger.logInfo('CategoryService: Getting category by ID', { id });
 
     if (!id || id <= 0) {
-      throw new Error('Valid category ID is required');
+      throw new ValidationError('Valid category ID is required');
     }
 
     const category = await this.categoryDataSource.findById(id);
     if (!category) {
-      throw new Error('Category not found');
+      throw new NotFoundError('Category not found');
     }
 
     return category;

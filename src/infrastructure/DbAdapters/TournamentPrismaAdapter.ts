@@ -6,6 +6,7 @@ import {
   UpdateTournamentRequest,
 } from '../../domain/entities/Tournament';
 import { Logger } from '../../shared/Logger';
+import { NotFoundError } from '../../shared/exceptions';
 
 export class TournamentPrismaAdapter implements ITournamentDataSource {
   constructor(
@@ -168,7 +169,7 @@ export class TournamentPrismaAdapter implements ITournamentDataSource {
     } catch (error) {
       this.logger.logError('Error updating tournament', error);
       if (error.code === 'P2025') {
-        throw new Error('Tournament not found');
+        throw new NotFoundError('Tournament not found');
       }
       throw new Error('Failed to update tournament');
     }
@@ -195,7 +196,7 @@ export class TournamentPrismaAdapter implements ITournamentDataSource {
     } catch (error) {
       this.logger.logError('Error deleting tournament', error);
       if (error.code === 'P2025') {
-        throw new Error('Tournament not found');
+        throw new NotFoundError('Tournament not found');
       }
       throw new Error('Failed to delete tournament');
     }

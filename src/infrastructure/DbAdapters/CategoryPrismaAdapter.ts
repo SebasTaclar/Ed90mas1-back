@@ -6,6 +6,7 @@ import {
   UpdateCategoryRequest,
 } from '../../domain/entities/Category';
 import { Logger } from '../../shared/Logger';
+import { ConflictError, NotFoundError } from '../../shared/exceptions';
 
 export class CategoryPrismaAdapter implements ICategoryDataSource {
   constructor(
@@ -32,7 +33,7 @@ export class CategoryPrismaAdapter implements ICategoryDataSource {
     } catch (error) {
       this.logger.logError('Error creating category', error);
       if (error.code === 'P2002') {
-        throw new Error('Category name already exists');
+        throw new ConflictError('Category name already exists');
       }
       throw new Error('Failed to create category');
     }
@@ -98,10 +99,10 @@ export class CategoryPrismaAdapter implements ICategoryDataSource {
     } catch (error) {
       this.logger.logError('Error updating category', error);
       if (error.code === 'P2002') {
-        throw new Error('Category name already exists');
+        throw new ConflictError('Category name already exists');
       }
       if (error.code === 'P2025') {
-        throw new Error('Category not found');
+        throw new NotFoundError('Category not found');
       }
       throw new Error('Failed to update category');
     }
@@ -119,7 +120,7 @@ export class CategoryPrismaAdapter implements ICategoryDataSource {
     } catch (error) {
       this.logger.logError('Error deleting category', error);
       if (error.code === 'P2025') {
-        throw new Error('Category not found');
+        throw new NotFoundError('Category not found');
       }
       throw new Error('Failed to delete category');
     }

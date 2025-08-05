@@ -8,6 +8,8 @@ import {
   TeamWithRelations,
 } from '../../domain/entities/Team';
 import { Logger } from '../../shared/Logger';
+import { ValidationError } from '../../shared/exceptions';
+import { PasswordUtils } from '../../shared/PasswordUtils';
 
 export class TeamService {
   constructor(
@@ -43,29 +45,28 @@ export class TeamService {
 
     // Validate user data
     if (!teamData.userEmail || teamData.userEmail.trim().length === 0) {
-      throw new Error('User email is required');
+      throw new ValidationError('User email is required');
     }
 
     if (!teamData.userPassword || teamData.userPassword.trim().length === 0) {
-      throw new Error('User password is required');
+      throw new ValidationError('User password is required');
     }
 
-    if (teamData.userPassword.length < 6) {
-      throw new Error('User password must be at least 6 characters long');
-    }
+    // Usar la validación centralizada de PasswordUtils
+    PasswordUtils.validatePassword(teamData.userPassword);
 
     if (!teamData.userName || teamData.userName.trim().length === 0) {
-      throw new Error('User name is required');
+      throw new ValidationError('User name is required');
     }
 
     if (teamData.userName.trim().length < 2) {
-      throw new Error('User name must be at least 2 characters long');
+      throw new ValidationError('User name must be at least 2 characters long');
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(teamData.userEmail.trim())) {
-      throw new Error('Invalid email format');
+      throw new ValidationError('Invalid email format');
     }
 
     // Validate tournaments if provided
@@ -73,11 +74,11 @@ export class TeamService {
       for (const tournamentId of teamData.tournamentIds) {
         const tournament = await this.tournamentDataSource.findById(tournamentId);
         if (!tournament) {
-          throw new Error(`Tournament with ID ${tournamentId} does not exist`);
+          throw new ValidationError(`Tournament with ID ${tournamentId} does not exist`);
         }
 
         if (!tournament.isActive) {
-          throw new Error(`Tournament "${tournament.name}" is not active`);
+          throw new ValidationError(`Tournament "${tournament.name}" is not active`);
         }
 
         // Check if tournament has space for more teams

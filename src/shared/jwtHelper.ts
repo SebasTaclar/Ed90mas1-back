@@ -1,11 +1,13 @@
 import '../config/config';
 import { sign, verify } from 'jsonwebtoken';
+import { AuthenticationError } from './exceptions';
 
 const SECRET_KEY = process.env.JWT_SECRET;
 
 // Validar que JWT_SECRET esté configurado
 if (!SECRET_KEY) {
-  throw new Error('JWT_SECRET environment variable is not configured');
+  console.error('CRITICAL: JWT_SECRET environment variable is not configured');
+  process.exit(1); // Terminar la aplicación si no hay JWT_SECRET
 }
 
 export function generateToken(user: {
@@ -36,11 +38,11 @@ export function verifyToken(token: string): {
 } {
   try {
     if (!token) {
-      throw new Error('Token is required');
+      throw new AuthenticationError('Token is required');
     }
 
     if (!SECRET_KEY) {
-      throw new Error('JWT secret is not configured');
+      throw new AuthenticationError('JWT secret is not configured');
     }
 
     const decoded = verify(token, SECRET_KEY) as {
@@ -58,14 +60,14 @@ export function verifyToken(token: string): {
       console.error('JWT verification failed:', error.message);
 
       if (error.name === 'TokenExpiredError') {
-        throw new Error('Token has expired');
+        throw new AuthenticationError('Token has expired');
       } else if (error.name === 'JsonWebTokenError') {
-        throw new Error('Invalid token format');
+        throw new AuthenticationError('Invalid token format');
       } else if (error.name === 'NotBeforeError') {
-        throw new Error('Token not active yet');
+        throw new AuthenticationError('Token not active yet');
       }
     }
 
-    throw new Error('unauthorized');
+    throw new AuthenticationError('Unauthorized');
   }
 }

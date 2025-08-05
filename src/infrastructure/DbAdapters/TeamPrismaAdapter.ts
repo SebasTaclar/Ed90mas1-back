@@ -10,6 +10,7 @@ import { Logger } from '../../shared/Logger';
 import { PasswordUtils } from '../../shared/PasswordUtils';
 import { USER_ROLES } from '../../shared/UserRoles';
 import { UserPrismaAdapter } from './UserPrismaAdapter';
+import { ConflictError, NotFoundError } from '../../shared/exceptions';
 
 export class TeamPrismaAdapter implements ITeamDataSource {
   constructor(
@@ -103,10 +104,10 @@ export class TeamPrismaAdapter implements ITeamDataSource {
       this.logger.logError('Error creating team', error);
       if (error.code === 'P2002') {
         if (error.meta?.target?.includes('email')) {
-          throw new Error('User email already exists');
+          throw new ConflictError('User email already exists');
         }
         if (error.meta?.target?.includes('user_id')) {
-          throw new Error('User already has a team associated');
+          throw new ConflictError('User already has a team associated');
         }
       }
       throw new Error('Failed to create team');
@@ -304,7 +305,7 @@ export class TeamPrismaAdapter implements ITeamDataSource {
     } catch (error) {
       this.logger.logError('Error updating team', error);
       if (error.code === 'P2025') {
-        throw new Error('Team not found');
+        throw new NotFoundError('Team not found');
       }
       throw new Error('Failed to update team');
     }
@@ -326,7 +327,7 @@ export class TeamPrismaAdapter implements ITeamDataSource {
         });
 
         if (!team) {
-          throw new Error('Team not found');
+          throw new NotFoundError('Team not found');
         }
 
         // Delete team
@@ -344,7 +345,7 @@ export class TeamPrismaAdapter implements ITeamDataSource {
     } catch (error) {
       this.logger.logError('Error deleting team', error);
       if (error.code === 'P2025') {
-        throw new Error('Team not found');
+        throw new NotFoundError('Team not found');
       }
       throw new Error('Failed to delete team');
     }

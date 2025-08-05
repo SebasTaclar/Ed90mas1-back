@@ -1,5 +1,6 @@
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 import { Logger } from './Logger';
+import { ValidationError } from './exceptions';
 
 export class BlobStorageService {
   private containerClient: ContainerClient;
@@ -48,22 +49,24 @@ export class BlobStorageService {
 
       // Validar que es un Buffer válido
       if (!Buffer.isBuffer(fileBuffer)) {
-        throw new Error('File data must be a Buffer');
+        throw new ValidationError('File data must be a Buffer');
       }
 
       // Validar tipo de archivo
       if (!this.isValidImageType(contentType)) {
-        throw new Error(`Invalid file type: ${contentType}. Only PNG, JPG, and JPEG are allowed`);
+        throw new ValidationError(
+          `Invalid file type: ${contentType}. Only PNG, JPG, and JPEG are allowed`
+        );
       }
 
       // Validar tamaño (5MB máximo)
       if (fileBuffer.length > 5 * 1024 * 1024) {
-        throw new Error('File size too large. Maximum size is 5MB');
+        throw new ValidationError('File size too large. Maximum size is 5MB');
       }
 
       // Validar que el buffer no esté vacío
       if (fileBuffer.length === 0) {
-        throw new Error('File buffer is empty');
+        throw new ValidationError('File buffer is empty');
       }
 
       // Generar nombre único para el archivo
@@ -107,7 +110,7 @@ export class BlobStorageService {
       const fileName = this.extractFileNameFromUrl(logoUrl);
 
       if (!fileName) {
-        throw new Error('Invalid logo URL');
+        throw new ValidationError('Invalid logo URL');
       }
 
       const blockBlobClient = this.containerClient.getBlockBlobClient(fileName);
