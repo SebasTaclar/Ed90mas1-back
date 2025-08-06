@@ -5,4 +5,5 @@ export type User = {
   name: string;
   role: string;
   membershipPaid: boolean;
+  teamId?: number; // Para usuarios con rol 'team'
 };

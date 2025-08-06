@@ -16,6 +16,7 @@ export function generateToken(user: {
   name: string;
   email: string;
   membershipPaid: boolean;
+  teamId?: number;
 }): string {
   const payload = {
     id: user.id,
@@ -23,6 +24,7 @@ export function generateToken(user: {
     name: user.name,
     role: user.role,
     membershipPaid: user.membershipPaid,
+    teamId: user.teamId,
   };
 
   const token = sign(payload, SECRET_KEY, { expiresIn: '1h' });

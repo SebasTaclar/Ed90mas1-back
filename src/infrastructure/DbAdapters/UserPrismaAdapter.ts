@@ -69,10 +69,25 @@ export class UserPrismaAdapter implements IUserDataSource {
         name: true,
         role: true,
         membershipPaid: true,
+        team: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
-    return user as User | null;
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      password: user.password,
+      name: user.name,
+      role: user.role,
+      membershipPaid: user.membershipPaid,
+      teamId: user.team?.id,
+    } as User;
   }
 
   public async create(user: User): Promise<User> {

@@ -9,6 +9,7 @@ export interface AuthenticatedUser {
   name: string;
   role: string;
   membershipPaid: boolean;
+  teamId?: number;
 }
 
 export type HandlerWithAuth = (

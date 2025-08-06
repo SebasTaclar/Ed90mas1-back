@@ -15,6 +15,7 @@ export interface UserInfo {
   role: string;
   name: string;
   membershipPaid: boolean;
+  teamId?: number;
 }
 
 export interface CreateUserRequest {
@@ -66,9 +67,12 @@ export class AuthService {
       role: user.role,
       name: user.name,
       membershipPaid: user.membershipPaid,
+      teamId: user.teamId,
     });
 
-    this.logger.logInfo(`Login successful for user: ${email} with role: ${user.role}`);
+    this.logger.logInfo(
+      `Login successful for user: ${email} with role: ${user.role}${user.teamId ? ` and teamId: ${user.teamId}` : ''}`
+    );
 
     return token;
   }
