@@ -118,6 +118,8 @@ export class PlayerService {
       jerseyNumber: playerData.jerseyNumber,
       teamId: playerData.teamId,
       profilePhotoPath: playerData.profilePhotoPath?.trim() || undefined,
+      identificationNumber: playerData.identificationNumber?.trim() || undefined,
+      epsProvider: playerData.epsProvider?.trim() || undefined,
     });
 
     this.logger.logInfo('PlayerService: Player created successfully', { id: player.id });
@@ -319,6 +321,12 @@ export class PlayerService {
     }
     if (playerData.profilePhotoPath !== undefined) {
       updateData.profilePhotoPath = playerData.profilePhotoPath?.trim() || null;
+    }
+    if (playerData.identificationNumber !== undefined) {
+      updateData.identificationNumber = playerData.identificationNumber?.trim() || null;
+    }
+    if (playerData.epsProvider !== undefined) {
+      updateData.epsProvider = playerData.epsProvider?.trim() || null;
     }
 
     const player = await this.playerDataSource.update(id, updateData);
