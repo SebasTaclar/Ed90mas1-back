@@ -4,6 +4,8 @@ export interface Player {
   lastName: string;
   email: string;
   phone?: string;
+  identificationNumber?: string;
+  epsProvider?: string;
   dateOfBirth: Date;
   position?: string;
   jerseyNumber?: number;
@@ -19,6 +21,8 @@ export interface CreatePlayerRequest {
   lastName: string;
   email: string;
   phone?: string;
+  identificationNumber?: string;
+  epsProvider?: string;
   dateOfBirth: Date;
   position?: string;
   jerseyNumber?: number;
@@ -31,6 +35,8 @@ export interface UpdatePlayerRequest {
   lastName?: string;
   email?: string;
   phone?: string;
+  identificationNumber?: string;
+  epsProvider?: string;
   dateOfBirth?: Date;
   position?: string;
   jerseyNumber?: number;
@@ -44,5 +50,8 @@ export interface PlayerWithTeam extends Player {
     id: number;
     name: string;
     logoPath?: string;
+    user?: {
+      id: number;
+    };
   };
 }

@@ -29,6 +29,8 @@ export class PlayerPrismaAdapter implements IPlayerDataSource {
           lastName: playerData.lastName,
           email: playerData.email,
           phone: playerData.phone,
+          identificationNumber: playerData.identificationNumber,
+          epsProvider: playerData.epsProvider,
           dateOfBirth: playerData.dateOfBirth,
           position: playerData.position,
           jerseyNumber: playerData.jerseyNumber,
@@ -69,6 +71,11 @@ export class PlayerPrismaAdapter implements IPlayerDataSource {
               id: true,
               name: true,
               logoPath: true,
+              user: {
+                select: {
+                  id: true,
+                },
+              },
             },
           },
         },
@@ -92,6 +99,11 @@ export class PlayerPrismaAdapter implements IPlayerDataSource {
               id: true,
               name: true,
               logoPath: true,
+              user: {
+                select: {
+                  id: true,
+                },
+              },
             },
           },
         },
@@ -118,6 +130,11 @@ export class PlayerPrismaAdapter implements IPlayerDataSource {
               id: true,
               name: true,
               logoPath: true,
+              user: {
+                select: {
+                  id: true,
+                },
+              },
             },
           },
         },

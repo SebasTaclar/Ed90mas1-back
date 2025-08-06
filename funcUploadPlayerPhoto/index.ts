@@ -90,15 +90,26 @@ const funcUploadPlayerPhoto = async (
     `Uploading photo for player ID: ${playerId} - Requested by: ${user.email} (Role: ${user.role})`
   );
 
-  // Verificar permisos - solo admins pueden subir fotos de jugadores
-  if (user.role !== 'admin') {
-    throw new AuthorizationError('Only administrators can upload player photos');
+  // Verificar permisos: admin o team owner pueden subir fotos de jugadores
+  if (user.role !== 'admin' && user.role !== 'team') {
+    throw new AuthorizationError('Only administrators or team owners can upload player photos');
   }
 
   const playerService = getPlayerService(log);
   const blobStorageService = getBlobStorageService(log);
 
   const player = await playerService.getPlayerById(playerId);
+
+  // Si es rol "team", verificar que es owner del equipo del jugador
+  if (user.role === 'team') {
+    // Comparar como números para evitar problemas de tipo
+    const userId = Number(user.id);
+    const teamUserId = Number(player.team.user?.id);
+
+    if (userId !== teamUserId) {
+      throw new AuthorizationError('You can only upload photos for players from your own team');
+    }
+  }
 
   // Parsear el archivo del multipart/form-data
   let parsedFile: ParsedFile | null;

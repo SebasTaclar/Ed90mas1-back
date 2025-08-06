@@ -16,12 +16,41 @@ const funcUpdatePlayer = async (
 
   log.logInfo(`Updating player ID: ${playerId} - Requested by: ${user.email} (Role: ${user.role})`);
 
-  // Verificar permisos: solo admin puede actualizar jugadores
-  if (user.role !== 'admin') {
-    throw new AuthorizationError('Only administrators can update players');
+  // Verificar permisos: admin o team owner pueden actualizar jugadores
+  if (user.role !== 'admin' && user.role !== 'team') {
+    throw new AuthorizationError('Only administrators or team owners can update players');
   }
 
   const playerService = getPlayerService(log);
+
+  // Si es rol "team", verificar que es owner del equipo del jugador
+  if (user.role === 'team') {
+    const existingPlayer = await playerService.getPlayerById(playerId);
+
+    // Comparar como números para evitar problemas de tipo
+    const userId = Number(user.id);
+    const teamUserId = Number(existingPlayer.team.user?.id);
+
+    if (userId !== teamUserId) {
+      throw new AuthorizationError('You can only update players from your own team');
+    }
+
+    // Si está cambiando el equipo del jugador, verificar que el nuevo equipo también le pertenece
+    if (req.body.teamId && req.body.teamId !== existingPlayer.teamId) {
+      const { getTeamService } = await import('../src/shared/serviceProvider');
+      const teamService = getTeamService(log);
+      const newTeam = await teamService.getTeamById(req.body.teamId);
+
+      // Comparar como números para evitar problemas de tipo
+      const userId = Number(user.id);
+      const newTeamUserId = Number(newTeam.user.id);
+
+      if (userId !== newTeamUserId) {
+        throw new AuthorizationError('You can only move players to your own teams');
+      }
+    }
+  }
+
   const player = await playerService.updatePlayer(playerId, req.body);
 
   return ApiResponseBuilder.success(player, 'Player updated successfully');

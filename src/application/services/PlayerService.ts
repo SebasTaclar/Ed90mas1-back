@@ -62,20 +62,6 @@ export class PlayerService {
       throw new ValidationError('Date of birth is required');
     }
 
-    // Validate age (must be at least 16 years old)
-    const birthDate = new Date(playerData.dateOfBirth);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      // Adjust age if birthday hasn't occurred this year
-    }
-
-    if (age < 16) {
-      throw new ValidationError('Player must be at least 16 years old');
-    }
-
     if (!playerData.teamId || playerData.teamId <= 0) {
       throw new ValidationError('Valid team ID is required');
     }
@@ -247,16 +233,6 @@ export class PlayerService {
     }
 
     // Validate date of birth if provided
-    if (playerData.dateOfBirth !== undefined) {
-      const birthDate = new Date(playerData.dateOfBirth);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-
-      if (age < 16) {
-        throw new ValidationError('Player must be at least 16 years old');
-      }
-    }
-
     // Validate team if provided
     if (playerData.teamId !== undefined) {
       if (!playerData.teamId || playerData.teamId <= 0) {
@@ -367,5 +343,34 @@ export class PlayerService {
     await this.playerDataSource.delete(id);
 
     this.logger.logInfo('PlayerService: Player deleted successfully', { id });
+  }
+
+  async updatePlayerPhoto(id: number, photoPath: string | null): Promise<PlayerWithTeam> {
+    this.logger.logInfo('PlayerService: Updating player photo', { id, photoPath });
+
+    if (!id || id <= 0) {
+      throw new ValidationError('Valid player ID is required');
+    }
+
+    // Check if player exists
+    const existingPlayer = await this.playerDataSource.findById(id);
+    if (!existingPlayer) {
+      throw new NotFoundError('Player not found');
+    }
+
+    // Update only the photo path
+    const player = await this.playerDataSource.update(id, {
+      profilePhotoPath: photoPath,
+    });
+
+    this.logger.logInfo('PlayerService: Player photo updated successfully', { id, photoPath });
+
+    // Return the updated player with team information
+    const updatedPlayer = await this.playerDataSource.findById(id);
+    if (!updatedPlayer) {
+      throw new NotFoundError('Failed to retrieve updated player');
+    }
+
+    return updatedPlayer;
   }
 }
