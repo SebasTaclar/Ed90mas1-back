@@ -3,17 +3,20 @@ import { AuthService } from '../application/services/AuthService';
 import { HealthService } from '../application/services/HealthService';
 import { CategoryService } from '../application/services/CategoryService';
 import { TournamentService } from '../application/services/TournamentService';
+import { TournamentConfigurationService } from '../application/services/TournamentConfigurationService';
 import { TeamService } from '../application/services/TeamService';
 import { PlayerService } from '../application/services/PlayerService';
 import { BlobStorageService } from './BlobStorageService';
 import { UserPrismaAdapter } from '../infrastructure/DbAdapters/UserPrismaAdapter';
 import { CategoryPrismaAdapter } from '../infrastructure/DbAdapters/CategoryPrismaAdapter';
 import { TournamentPrismaAdapter } from '../infrastructure/DbAdapters/TournamentPrismaAdapter';
+import { TournamentConfigurationPrismaAdapter } from '../infrastructure/DbAdapters/TournamentConfigurationPrismaAdapter';
 import { TeamPrismaAdapter } from '../infrastructure/DbAdapters/TeamPrismaAdapter';
 import { PlayerPrismaAdapter } from '../infrastructure/DbAdapters/PlayerPrismaAdapter';
 import { IUserDataSource } from '../domain/interfaces/IUserDataSource';
 import { ICategoryDataSource } from '../domain/interfaces/ICategoryDataSource';
 import { ITournamentDataSource } from '../domain/interfaces/ITournamentDataSource';
+import { ITournamentConfigurationDataSource } from '../domain/interfaces/ITournamentConfigurationDataSource';
 import { ITeamDataSource } from '../domain/interfaces/ITeamDataSource';
 import { IPlayerDataSource } from '../domain/interfaces/IPlayerDataSource';
 import { getPrismaClient } from '../config/PrismaClient';
@@ -44,6 +47,13 @@ export class ServiceProvider {
    */
   static getTournamentDataSource(logger: Logger): ITournamentDataSource {
     return new TournamentPrismaAdapter(this.prismaClient, logger);
+  }
+
+  /**
+   * Crea una instancia de TournamentConfigurationDataSource
+   */
+  static getTournamentConfigurationDataSource(): ITournamentConfigurationDataSource {
+    return new TournamentConfigurationPrismaAdapter();
   }
 
   /**
@@ -92,7 +102,22 @@ export class ServiceProvider {
     const tournamentDataSource = this.getTournamentDataSource(logger);
     const categoryDataSource = this.getCategoryDataSource(logger);
     const teamDataSource = this.getTeamDataSource(logger);
-    return new TournamentService(tournamentDataSource, categoryDataSource, teamDataSource, logger);
+    const tournamentConfigurationService = this.getTournamentConfigurationService(logger);
+    return new TournamentService(
+      tournamentDataSource,
+      categoryDataSource,
+      teamDataSource,
+      tournamentConfigurationService,
+      logger
+    );
+  }
+
+  /**
+   * Crea una instancia de TournamentConfigurationService con sus dependencias inyectadas
+   */
+  static getTournamentConfigurationService(logger: Logger): TournamentConfigurationService {
+    const tournamentConfigDataSource = this.getTournamentConfigurationDataSource();
+    return new TournamentConfigurationService(logger, tournamentConfigDataSource);
   }
 
   /**
@@ -137,6 +162,12 @@ export const getCategoryService = (logger: Logger): CategoryService => {
 
 export const getTournamentService = (logger: Logger): TournamentService => {
   return ServiceProvider.getTournamentService(logger);
+};
+
+export const getTournamentConfigurationService = (
+  logger: Logger
+): TournamentConfigurationService => {
+  return ServiceProvider.getTournamentConfigurationService(logger);
 };
 
 export const getTeamService = (logger: Logger): TeamService => {

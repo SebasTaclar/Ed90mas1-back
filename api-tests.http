@@ -127,3 +127,77 @@ POST http://localhost:7071/api/funcCreateUser
 Content-Type: application/json
 
 {}
+
+###
+# TOURNAMENT CONFIGURATION ENDPOINTS
+# 
+# ✨ NUEVA FUNCIONALIDAD: 
+# Los endpoints de GET /api/tournaments ahora incluyen automáticamente:
+# - configuration: Configuración del torneo (grupos, equipos por grupo)
+# - groups: Lista de grupos del torneo (A, B, C, etc.)
+# - teamAssignments: Asignaciones de equipos a grupos
+# 
+# Si un torneo no está configurado, estos campos aparecerán como null o vacíos.
+###
+
+### Get All Tournaments (now includes configuration) - Enhanced Response
+GET http://localhost:7071/api/tournaments
+# Response will now include configuration data for each tournament
+
+### Configure Tournament - Success Response
+POST http://localhost:7071/api/tournaments/1/configuration
+Content-Type: application/json
+
+{
+  "numberOfGroups": 4,
+  "teamsPerGroup": 4,
+  "teamAssignments": [
+    { "teamId": 1, "groupName": "A" },
+    { "teamId": 2, "groupName": "A" },
+    { "teamId": 3, "groupName": "B" },
+    { "teamId": 4, "groupName": "B" }
+  ]
+}
+
+### Configure Tournament with Auto Assignment - Success Response
+POST http://localhost:7071/api/tournaments/2/configuration
+Content-Type: application/json
+
+{
+  "numberOfGroups": 2,
+  "teamsPerGroup": 6
+}
+
+### Get Tournament Configuration - Success Response
+GET http://localhost:7071/api/tournaments/1/configuration
+
+### Get Non-existent Tournament Configuration - Not Found Response
+GET http://localhost:7071/api/tournaments/999/configuration
+
+### Update Tournament Configuration - Success Response
+PUT http://localhost:7071/api/tournaments/1/configuration
+Content-Type: application/json
+
+{
+  "numberOfGroups": 6,
+  "teamsPerGroup": 3,
+  "isConfigured": true
+}
+
+### Configure Tournament with Invalid Data - Validation Error Response
+POST http://localhost:7071/api/tournaments/3/configuration
+Content-Type: application/json
+
+{
+  "numberOfGroups": 0,
+  "teamsPerGroup": -1
+}
+
+### Configure Tournament with Too Many Groups - Validation Error Response
+POST http://localhost:7071/api/tournaments/4/configuration
+Content-Type: application/json
+
+{
+  "numberOfGroups": 30,
+  "teamsPerGroup": 4
+}

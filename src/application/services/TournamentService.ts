@@ -6,6 +6,7 @@ import {
   CreateTournamentRequest,
   UpdateTournamentRequest,
 } from '../../domain/entities/Tournament';
+import { TournamentConfigurationService } from './TournamentConfigurationService';
 import { Logger } from '../../shared/Logger';
 
 export class TournamentService {
@@ -13,6 +14,7 @@ export class TournamentService {
     private tournamentDataSource: ITournamentDataSource,
     private categoryDataSource: ICategoryDataSource,
     private teamDataSource: ITeamDataSource,
+    private tournamentConfigurationService: TournamentConfigurationService,
     private logger: Logger
   ) {}
 
@@ -94,13 +96,40 @@ export class TournamentService {
     return tournament;
   }
 
-  async getAllTournaments(): Promise<Tournament[]> {
+  async getAllTournaments(): Promise<any[]> {
     this.logger.logInfo('TournamentService: Getting all tournaments');
 
     const tournaments = await this.tournamentDataSource.findAll();
 
-    this.logger.logInfo('TournamentService: Tournaments retrieved', { count: tournaments.length });
-    return tournaments;
+    // Enrich tournaments with configuration data
+    const enrichedTournaments = await Promise.all(
+      tournaments.map(async (tournament) => {
+        try {
+          const configuration =
+            await this.tournamentConfigurationService.getTournamentConfiguration(tournament.id);
+          return {
+            ...tournament,
+            configuration: configuration.configuration,
+            groups: configuration.groups,
+            teamAssignments: configuration.assignments,
+          };
+        } catch (error) {
+          // If configuration doesn't exist, just return tournament without config
+          this.logger.logWarning(`No configuration found for tournament ${tournament.id}`, error);
+          return {
+            ...tournament,
+            configuration: null,
+            groups: [],
+            teamAssignments: [],
+          };
+        }
+      })
+    );
+
+    this.logger.logInfo('TournamentService: Tournaments retrieved with configuration', {
+      count: enrichedTournaments.length,
+    });
+    return enrichedTournaments;
   }
 
   async getTournamentsByCategory(categoryId: number): Promise<Tournament[]> {
