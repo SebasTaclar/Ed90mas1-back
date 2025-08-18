@@ -201,3 +201,264 @@ Content-Type: application/json
   "numberOfGroups": 30,
   "teamsPerGroup": 4
 }
+
+###
+# MATCH MANAGEMENT ENDPOINTS
+# 
+# ✨ NUEVAS FUNCIONALIDADES:
+# - CRUD completo para partidos
+# - Generación automática de fixtures
+# - Gestión de eventos en tiempo real
+# - Estadísticas de partidos y torneos
+###
+
+### Create Match - Success Response
+POST http://localhost:7071/api/matches
+Content-Type: application/json
+
+{
+  "tournamentId": 1,
+  "groupId": 1,
+  "homeTeamId": 1,
+  "awayTeamId": 2,
+  "scheduledDate": "2025-08-20T15:00:00Z",
+  "venue": "Stadium A"
+}
+
+### Get Match by ID - Success Response
+GET http://localhost:7071/api/matches/1
+
+### Get Matches by Tournament - Success Response
+GET http://localhost:7071/api/matches?tournamentId=1
+
+### Get Matches by Team - Success Response
+GET http://localhost:7071/api/matches?teamId=1&tournamentId=1
+
+### Get Matches by Status - Success Response
+GET http://localhost:7071/api/matches?status=scheduled&tournamentId=1
+
+### Get Upcoming Matches - Success Response
+GET http://localhost:7071/api/matches?upcoming=true&teamId=1&limit=5
+
+### Update Match - Success Response
+PUT http://localhost:7071/api/matches/1
+Content-Type: application/json
+
+{
+  "status": "in_progress",
+  "homeScore": 1,
+  "awayScore": 0
+}
+
+### Delete Match - Success Response
+DELETE http://localhost:7071/api/matches/1
+
+###
+# MATCH FIXTURES ENDPOINTS
+###
+
+### Generate Tournament Fixtures - Success Response
+POST http://localhost:7071/api/fixtures
+Content-Type: application/json
+
+{
+  "tournamentId": 1,
+  "fixtureType": "round_robin",
+  "startDate": "2025-08-25T00:00:00Z"
+}
+
+### Generate Knockout Fixtures - Success Response
+POST http://localhost:7071/api/fixtures
+Content-Type: application/json
+
+{
+  "tournamentId": 2,
+  "fixtureType": "knockout",
+  "startDate": "2025-09-01T00:00:00Z",
+  "venue": "Main Stadium"
+}
+
+### Get Tournament Fixtures - Success Response
+GET http://localhost:7071/api/fixtures?tournamentId=1
+
+###
+# MATCH EVENTS ENDPOINTS
+###
+
+### Create Goal Event - Success Response
+POST http://localhost:7071/api/events/1
+Content-Type: application/json
+
+{
+  "playerId": 5,
+  "teamId": 1,
+  "eventType": "goal",
+  "minute": 25,
+  "description": "Great strike from outside the box"
+}
+
+### Create Yellow Card Event - Success Response
+POST http://localhost:7071/api/events/1
+Content-Type: application/json
+
+{
+  "playerId": 8,
+  "teamId": 2,
+  "eventType": "yellow_card",
+  "minute": 34,
+  "description": "Unsporting behavior"
+}
+
+### Create Substitution Event - Success Response
+POST http://localhost:7071/api/events/1
+Content-Type: application/json
+
+{
+  "playerId": 10,
+  "teamId": 1,
+  "eventType": "substitution",
+  "minute": 65,
+  "description": "Tactical substitution",
+  "relatedPlayerId": 15
+}
+
+### Get Event by ID - Success Response
+GET http://localhost:7071/api/events/1/event/1
+
+### Get Match Events - Success Response
+GET http://localhost:7071/api/events/1
+
+### Get Events by Type - Success Response
+GET http://localhost:7071/api/events/1?eventType=goal
+
+### Get Events by Player - Success Response
+GET http://localhost:7071/api/events/1?playerId=5
+
+### Get Events by Team - Success Response
+GET http://localhost:7071/api/events/1?teamId=1
+
+### Get Events in Time Range - Success Response
+GET http://localhost:7071/api/events/1?startMinute=0&endMinute=45
+
+### Update Match Event - Success Response
+PUT http://localhost:7071/api/events/1/event/1
+Content-Type: application/json
+
+{
+  "minute": 26,
+  "description": "Updated: Amazing goal from 30 yards"
+}
+
+### Delete Match Event - Success Response
+DELETE http://localhost:7071/api/events/1/event/1
+
+###
+# MATCH STATISTICS ENDPOINTS
+###
+
+### Create Match Statistics - Success Response
+POST http://localhost:7071/api/statistics
+Content-Type: application/json
+
+{
+  "matchId": 1,
+  "playerId": 5,
+  "teamId": 1,
+  "goals": 2,
+  "assists": 1,
+  "yellowCards": 0,
+  "redCards": 0,
+  "minutesPlayed": 90
+}
+
+### Initialize Match Statistics - Success Response
+POST http://localhost:7071/api/statistics/initialize
+Content-Type: application/json
+
+{
+  "matchId": 1,
+  "playerIds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+}
+
+### Get Statistics by ID - Success Response
+GET http://localhost:7071/api/statistics/1
+
+### Get Match Statistics - Success Response
+GET http://localhost:7071/api/statistics?matchId=1
+
+### Get Player Statistics - Success Response
+GET http://localhost:7071/api/statistics?playerId=5&tournamentId=1
+
+### Get Team Statistics - Success Response
+GET http://localhost:7071/api/statistics?teamId=1&tournamentId=1
+
+### Update Match Statistics - Success Response
+PUT http://localhost:7071/api/statistics/1
+Content-Type: application/json
+
+{
+  "goals": 3,
+  "assists": 2,
+  "minutesPlayed": 90
+}
+
+### Delete Match Statistics - Success Response
+DELETE http://localhost:7071/api/statistics/1
+
+###
+# TOURNAMENT STATISTICS ENDPOINTS
+###
+
+### Get Tournament Statistics - Success Response
+GET http://localhost:7071/api/tournament-statistics/1
+
+### Get Tournament Team Statistics - Success Response
+GET http://localhost:7071/api/tournament-statistics/1/teams
+
+### Get Tournament Player Statistics - Success Response
+GET http://localhost:7071/api/tournament-statistics/1/players
+
+### Get Tournament Player Statistics by Team - Success Response
+GET http://localhost:7071/api/tournament-statistics/1/players?teamId=1
+
+### Get Tournament Top Scorers - Success Response
+GET http://localhost:7071/api/tournament-statistics/1/top-scorers?limit=10
+
+### Get Tournament Top Assists - Success Response
+GET http://localhost:7071/api/tournament-statistics/1/top-assists?limit=10
+
+###
+# ERROR TEST CASES
+###
+
+### Get Non-existent Match - Not Found Response
+GET http://localhost:7071/api/matches/999
+
+### Create Match with Invalid Data - Validation Error Response
+POST http://localhost:7071/api/matches
+Content-Type: application/json
+
+{
+  "tournamentId": "invalid",
+  "homeTeamId": -1
+}
+
+### Create Event without Match ID - Error Response
+POST http://localhost:7071/api/events
+Content-Type: application/json
+
+{
+  "playerId": 5,
+  "eventType": "goal"
+}
+
+### Get Statistics without Filters - Error Response
+GET http://localhost:7071/api/statistics
+
+### Update Non-existent Statistics - Not Found Response
+PUT http://localhost:7071/api/statistics/999
+Content-Type: application/json
+
+{
+  "goals": 1
+}

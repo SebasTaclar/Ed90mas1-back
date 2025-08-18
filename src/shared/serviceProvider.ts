@@ -6,6 +6,9 @@ import { TournamentService } from '../application/services/TournamentService';
 import { TournamentConfigurationService } from '../application/services/TournamentConfigurationService';
 import { TeamService } from '../application/services/TeamService';
 import { PlayerService } from '../application/services/PlayerService';
+import { MatchService } from '../application/services/MatchService';
+import { MatchEventService } from '../application/services/MatchEventService';
+import { MatchStatisticsService } from '../application/services/MatchStatisticsService';
 import { BlobStorageService } from './BlobStorageService';
 import { UserPrismaAdapter } from '../infrastructure/DbAdapters/UserPrismaAdapter';
 import { CategoryPrismaAdapter } from '../infrastructure/DbAdapters/CategoryPrismaAdapter';
@@ -13,12 +16,18 @@ import { TournamentPrismaAdapter } from '../infrastructure/DbAdapters/Tournament
 import { TournamentConfigurationPrismaAdapter } from '../infrastructure/DbAdapters/TournamentConfigurationPrismaAdapter';
 import { TeamPrismaAdapter } from '../infrastructure/DbAdapters/TeamPrismaAdapter';
 import { PlayerPrismaAdapter } from '../infrastructure/DbAdapters/PlayerPrismaAdapter';
+import { MatchPrismaAdapter } from '../infrastructure/DbAdapters/MatchPrismaAdapter';
+import { MatchEventPrismaAdapter } from '../infrastructure/DbAdapters/MatchEventPrismaAdapter';
+import { MatchStatisticsPrismaAdapter } from '../infrastructure/DbAdapters/MatchStatisticsPrismaAdapter';
 import { IUserDataSource } from '../domain/interfaces/IUserDataSource';
 import { ICategoryDataSource } from '../domain/interfaces/ICategoryDataSource';
 import { ITournamentDataSource } from '../domain/interfaces/ITournamentDataSource';
 import { ITournamentConfigurationDataSource } from '../domain/interfaces/ITournamentConfigurationDataSource';
 import { ITeamDataSource } from '../domain/interfaces/ITeamDataSource';
 import { IPlayerDataSource } from '../domain/interfaces/IPlayerDataSource';
+import { IMatchDataSource } from '../domain/interfaces/IMatchDataSource';
+import { IMatchEventDataSource } from '../domain/interfaces/IMatchEventDataSource';
+import { IMatchStatisticsDataSource } from '../domain/interfaces/IMatchStatisticsDataSource';
 import { getPrismaClient } from '../config/PrismaClient';
 
 /**
@@ -62,6 +71,27 @@ export class ServiceProvider {
   static getTeamDataSource(logger: Logger): ITeamDataSource {
     const userAdapter = new UserPrismaAdapter();
     return new TeamPrismaAdapter(this.prismaClient, logger, userAdapter);
+  }
+
+  /**
+   * Crea una instancia de MatchDataSource
+   */
+  static getMatchDataSource(logger: Logger): IMatchDataSource {
+    return new MatchPrismaAdapter(this.prismaClient, logger);
+  }
+
+  /**
+   * Crea una instancia de MatchEventDataSource
+   */
+  static getMatchEventDataSource(logger: Logger): IMatchEventDataSource {
+    return new MatchEventPrismaAdapter(this.prismaClient, logger);
+  }
+
+  /**
+   * Crea una instancia de MatchStatisticsDataSource
+   */
+  static getMatchStatisticsDataSource(logger: Logger): IMatchStatisticsDataSource {
+    return new MatchStatisticsPrismaAdapter(this.prismaClient, logger);
   }
 
   /**
@@ -140,6 +170,47 @@ export class ServiceProvider {
   }
 
   /**
+   * Crea una instancia de MatchService con sus dependencias inyectadas
+   */
+  static getMatchService(logger: Logger): MatchService {
+    const matchDataSource = this.getMatchDataSource(logger);
+    const matchEventDataSource = this.getMatchEventDataSource(logger);
+    const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
+    const tournamentConfigDataSource = this.getTournamentConfigurationDataSource();
+    return new MatchService(
+      matchDataSource,
+      matchEventDataSource,
+      matchStatisticsDataSource,
+      tournamentConfigDataSource,
+      logger
+    );
+  }
+
+  /**
+   * Crea una instancia de MatchEventService con sus dependencias inyectadas
+   */
+  static getMatchEventService(logger: Logger): MatchEventService {
+    const matchEventDataSource = this.getMatchEventDataSource(logger);
+    const matchDataSource = this.getMatchDataSource(logger);
+    const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
+    return new MatchEventService(
+      matchEventDataSource,
+      matchDataSource,
+      matchStatisticsDataSource,
+      logger
+    );
+  }
+
+  /**
+   * Crea una instancia de MatchStatisticsService con sus dependencias inyectadas
+   */
+  static getMatchStatisticsService(logger: Logger): MatchStatisticsService {
+    const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
+    const matchDataSource = this.getMatchDataSource(logger);
+    return new MatchStatisticsService(matchStatisticsDataSource, matchDataSource, logger);
+  }
+
+  /**
    * Crea una instancia de BlobStorageService
    */
   static getBlobStorageService(logger: Logger): BlobStorageService {
@@ -180,6 +251,18 @@ export const getPlayerService = (logger: Logger): PlayerService => {
 
 export const getUserDataSource = (): IUserDataSource => {
   return ServiceProvider.getUserDataSource();
+};
+
+export const getMatchService = (logger: Logger): MatchService => {
+  return ServiceProvider.getMatchService(logger);
+};
+
+export const getMatchEventService = (logger: Logger): MatchEventService => {
+  return ServiceProvider.getMatchEventService(logger);
+};
+
+export const getMatchStatisticsService = (logger: Logger): MatchStatisticsService => {
+  return ServiceProvider.getMatchStatisticsService(logger);
 };
 
 export const getBlobStorageService = (logger: Logger): BlobStorageService => {
