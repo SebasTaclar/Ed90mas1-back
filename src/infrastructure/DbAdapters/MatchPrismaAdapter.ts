@@ -47,8 +47,15 @@ export class MatchPrismaAdapter implements IMatchDataSource {
     try {
       this.logger.logInfo('Creating match', { data });
 
+      // Convertir fechas string a Date objects (manteniendo hora local)
+      const createData: any = { ...data };
+
+      if (createData.matchDate && typeof createData.matchDate === 'string') {
+        createData.matchDate = new Date(createData.matchDate);
+      }
+
       const match = await this.prisma.match.create({
-        data,
+        data: createData,
       });
 
       this.logger.logInfo('Match created successfully', { id: match.id });
@@ -151,9 +158,24 @@ export class MatchPrismaAdapter implements IMatchDataSource {
     try {
       this.logger.logInfo('Updating match', { id, request });
 
+      // Convertir fechas string a Date objects (manteniendo hora local)
+      const updateData: any = { ...request };
+
+      if (updateData.matchDate && typeof updateData.matchDate === 'string') {
+        updateData.matchDate = new Date(updateData.matchDate);
+      }
+
+      if (updateData.startTime && typeof updateData.startTime === 'string') {
+        updateData.startTime = new Date(updateData.startTime);
+      }
+
+      if (updateData.endTime && typeof updateData.endTime === 'string') {
+        updateData.endTime = new Date(updateData.endTime);
+      }
+
       const match = await this.prisma.match.update({
         where: { id },
-        data: request,
+        data: updateData,
       });
 
       this.logger.logInfo('Match updated successfully', { id });
@@ -486,8 +508,9 @@ export class MatchPrismaAdapter implements IMatchDataSource {
     let currentMatchNumber = (lastMatch?.matchNumber || 0) + 1;
 
     for (const fixture of request.fixtures!) {
-      // Combinar fecha y hora
-      const matchDateTime = new Date(`${fixture.date}T${fixture.time}`);
+      // Combinar fecha y hora (manteniendo hora local)
+      const dateTimeString = `${fixture.date}T${fixture.time}`;
+      const matchDateTime = new Date(dateTimeString);
 
       this.logger.logInfo('Creating predefined fixture', {
         homeTeamId: fixture.homeTeamId,

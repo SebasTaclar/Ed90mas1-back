@@ -7,7 +7,7 @@ import { MatchStatus } from '../src/domain/entities/Match';
 
 const funcMatches = async (_context: Context, req: HttpRequest, log: Logger): Promise<unknown> => {
   const matchService = getMatchService(log);
-  const matchId = req.params?.id ? parseInt(req.params.id) : undefined;
+  const matchId = req.params?.matchId ? parseInt(req.params.matchId) : undefined;
 
   switch (req.method) {
     case 'POST': {
