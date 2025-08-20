@@ -115,7 +115,6 @@ export class MatchStatisticsService {
     });
     return stats;
   }
-
   async updateStatistics(
     id: number,
     request: UpdateMatchStatisticsRequest
