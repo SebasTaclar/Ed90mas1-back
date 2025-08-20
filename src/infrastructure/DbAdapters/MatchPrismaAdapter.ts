@@ -259,7 +259,7 @@ export class MatchPrismaAdapter implements IMatchDataSource {
                 awayTeamId: awayTeam.id,
                 matchDate: new Date(),
                 location: request.location || 'TBD',
-                round: request.round || 'Group Stage',
+                round: request.round || 'Fase de grupos',
                 status: MatchStatus.SCHEDULED,
                 matchNumber: currentMatchNumber++, // Increment after each use
               },
@@ -528,7 +528,7 @@ export class MatchPrismaAdapter implements IMatchDataSource {
           awayTeamId: fixture.awayTeamId,
           matchDate: matchDateTime,
           location: fixture.location, // Usar la ubicación específica de cada fixture
-          round: request.round || 'Group Stage',
+          round: request.round || 'Fase de grupos',
           status: fixture.status || MatchStatus.SCHEDULED,
           matchNumber: currentMatchNumber++,
         },
