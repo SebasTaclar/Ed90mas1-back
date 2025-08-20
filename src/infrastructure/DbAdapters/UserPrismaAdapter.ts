@@ -1,10 +1,14 @@
 import { getPrismaClient } from '../../config/PrismaClient';
 import { IUserDataSource } from '../../domain/interfaces/IUserDataSource';
 import { User } from '../../domain/entities/User';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 export class UserPrismaAdapter implements IUserDataSource {
-  private readonly prisma = getPrismaClient();
+  private readonly prisma: PrismaClient;
+
+  constructor(prismaClient?: PrismaClient) {
+    this.prisma = prismaClient || getPrismaClient();
+  }
 
   public async getAll(query?: unknown): Promise<User[]> {
     let whereClause: Prisma.UserWhereInput = {};

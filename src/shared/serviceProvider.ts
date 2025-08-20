@@ -41,7 +41,7 @@ export class ServiceProvider {
    * Crea una instancia de UserDataSource (actualmente PrismaAdapter)
    */
   static getUserDataSource(): IUserDataSource {
-    return new UserPrismaAdapter();
+    return new UserPrismaAdapter(this.prismaClient);
   }
 
   /**
@@ -62,14 +62,14 @@ export class ServiceProvider {
    * Crea una instancia de TournamentConfigurationDataSource
    */
   static getTournamentConfigurationDataSource(): ITournamentConfigurationDataSource {
-    return new TournamentConfigurationPrismaAdapter();
+    return new TournamentConfigurationPrismaAdapter(this.prismaClient);
   }
 
   /**
    * Crea una instancia de TeamDataSource
    */
   static getTeamDataSource(logger: Logger): ITeamDataSource {
-    const userAdapter = new UserPrismaAdapter();
+    const userAdapter = new UserPrismaAdapter(this.prismaClient);
     return new TeamPrismaAdapter(this.prismaClient, logger, userAdapter);
   }
 

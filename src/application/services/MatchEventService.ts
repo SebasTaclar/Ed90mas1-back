@@ -316,9 +316,7 @@ export class MatchEventService {
       throw new NotFoundError('Match not found');
     }
 
-    if (match.status !== MatchStatus.IN_PROGRESS) {
-      throw new ValidationError('Events can only be added to matches in progress');
-    }
+    // Validación de estado removida - se pueden agregar eventos a partidos en cualquier estado
   }
 
   private async updateStatisticsFromEvent(

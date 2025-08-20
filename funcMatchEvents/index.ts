@@ -22,7 +22,7 @@ const funcMatchEvents = async (
       }
 
       const request = {
-        ...JSON.parse(req.body || '{}'),
+        ...req.body,
         matchId,
       };
 

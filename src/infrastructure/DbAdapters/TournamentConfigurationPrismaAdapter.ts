@@ -14,10 +14,14 @@ import {
   CreateTeamGroupAssignmentRequest,
   ConfigureTournamentRequest,
 } from '../../domain/entities/TeamGroupAssignment';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 export class TournamentConfigurationPrismaAdapter implements ITournamentConfigurationDataSource {
-  private readonly prisma = getPrismaClient();
+  private readonly prisma: PrismaClient;
+
+  constructor(prismaClient?: PrismaClient) {
+    this.prisma = prismaClient || getPrismaClient();
+  }
 
   // Tournament Configuration Methods
   async getConfigurationByTournamentId(
