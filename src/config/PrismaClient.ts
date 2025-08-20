@@ -1,16 +1,21 @@
 import { PrismaClient } from '@prisma/client';
 
-// Variable global para singleton de PrismaClient
-declare global {
-  var __prismaClient: PrismaClient | undefined;
-}
+let prisma: PrismaClient | null = null;
 
 export const getPrismaClient = (): PrismaClient => {
-  if (!global.__prismaClient) {
-    global.__prismaClient = new PrismaClient({
-      log: ['warn', 'error'],
+  if (!prisma) {
+    prisma = new PrismaClient({
+      log: ['query', 'info', 'warn', 'error'],
     });
   }
-
-  return global.__prismaClient;
+  return prisma;
 };
+
+export const closePrismaConnection = async (): Promise<void> => {
+  if (prisma) {
+    await prisma.$disconnect();
+    prisma = null;
+  }
+};
+
+export { prisma as defaultPrismaClient };
