@@ -1,0 +1,57 @@
+###
+# Endpoint para eliminar configuración de torneo
+# DELETE /api/v1/tournaments/{tournamentId}/configuration
+
+### Eliminar configuración del torneo con ID 1
+DELETE http://localhost:7071/api/v1/tournaments/1/configuration
+Content-Type: application/json
+
+### Eliminar configuración del torneo con ID 2
+DELETE http://localhost:7071/api/v1/tournaments/2/configuration
+Content-Type: application/json
+
+### Verificar que la configuración fue eliminada (debería retornar error 404 o configuración vacía)
+GET http://localhost:7071/api/v1/tournaments/1/configuration
+Content-Type: application/json
+
+###
+# Flujo completo: Crear -> Verificar -> Eliminar -> Verificar eliminación
+
+### 1. Crear configuración de torneo
+POST http://localhost:7071/api/v1/tournaments/1/configuration
+Content-Type: application/json
+
+{
+  "numberOfGroups": 2,
+  "teamsPerGroup": 4,
+  "teamAssignments": [
+    {
+      "teamId": 1,
+      "groupName": "A"
+    },
+    {
+      "teamId": 2,
+      "groupName": "A"
+    },
+    {
+      "teamId": 3,
+      "groupName": "B"
+    },
+    {
+      "teamId": 4,
+      "groupName": "B"
+    }
+  ]
+}
+
+### 2. Verificar que se creó correctamente
+GET http://localhost:7071/api/v1/tournaments/1/configuration
+Content-Type: application/json
+
+### 3. Eliminar la configuración
+DELETE http://localhost:7071/api/v1/tournaments/1/configuration
+Content-Type: application/json
+
+### 4. Verificar que se eliminó correctamente
+GET http://localhost:7071/api/v1/tournaments/1/configuration
+Content-Type: application/json

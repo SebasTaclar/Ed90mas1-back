@@ -20,6 +20,7 @@ export interface ITournamentConfigurationDataSource {
     id: number,
     request: UpdateTournamentConfigurationRequest
   ): Promise<TournamentConfiguration | null>;
+  deleteConfigurationByTournamentId(tournamentId: number): Promise<boolean>;
 
   // Tournament Groups
   getGroupsByTournamentId(tournamentId: number): Promise<TournamentGroup[]>;

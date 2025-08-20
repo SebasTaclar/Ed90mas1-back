@@ -23,7 +23,8 @@ const funcTournamentConfiguration = async (
       return ApiResponseBuilder.success(result, 'Tournament configured successfully');
     }
 
-    case 'GET': { // Get tournament configuration
+    case 'GET': {
+      // Get tournament configuration
       if (!tournamentId) {
         return ApiResponseBuilder.error('Tournament ID is required', 400);
       }
@@ -61,6 +62,25 @@ const funcTournamentConfiguration = async (
           updatedConfig,
           'Tournament configuration updated successfully'
         );
+      }
+    }
+
+    case 'DELETE': {
+      // Delete tournament configuration
+      if (!tournamentId) {
+        return ApiResponseBuilder.error('Tournament ID is required', 400);
+      }
+
+      const deleted =
+        await tournamentConfigurationService.deleteTournamentConfiguration(tournamentId);
+
+      if (deleted) {
+        return ApiResponseBuilder.success(
+          { deleted: true },
+          'Tournament configuration deleted successfully'
+        );
+      } else {
+        return ApiResponseBuilder.error('Failed to delete tournament configuration', 500);
       }
     }
 

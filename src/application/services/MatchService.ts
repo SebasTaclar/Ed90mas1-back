@@ -9,6 +9,7 @@ import {
   GenerateFixtureRequest,
   MatchWithRelations,
   MatchStatus,
+  AttendingPlayers,
 } from '../../domain/entities/Match';
 import { Logger } from '../../shared/Logger';
 import { ValidationError, NotFoundError } from '../../shared/exceptions';
@@ -393,6 +394,172 @@ export class MatchService {
     const allowedTransitions = validTransitions[currentStatus] || [];
     if (!allowedTransitions.includes(newStatus)) {
       throw new ValidationError(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+    }
+  }
+
+  // Métodos para manejar jugadores asistentes
+  async setAttendingPlayers(matchId: number, attendingPlayers: AttendingPlayers): Promise<Match> {
+    this.logger.logInfo('MatchService: Setting attending players', { matchId, attendingPlayers });
+
+    if (!matchId || matchId <= 0) {
+      throw new ValidationError('Valid match ID is required');
+    }
+
+    // Validar que attendingPlayers tenga la estructura correcta
+    this.validateAttendingPlayers(attendingPlayers);
+
+    const match = await this.matchDataSource.update(matchId, { attendingPlayers });
+    if (!match) {
+      throw new NotFoundError('Match not found');
+    }
+
+    this.logger.logInfo('MatchService: Attending players set successfully', { matchId });
+    return match;
+  }
+
+  async addPlayerToMatch(matchId: number, teamId: number, playerId: number): Promise<Match> {
+    this.logger.logInfo('MatchService: Adding player to match', { matchId, teamId, playerId });
+
+    if (!matchId || matchId <= 0) {
+      throw new ValidationError('Valid match ID is required');
+    }
+    if (!teamId || teamId <= 0) {
+      throw new ValidationError('Valid team ID is required');
+    }
+    if (!playerId || playerId <= 0) {
+      throw new ValidationError('Valid player ID is required');
+    }
+
+    // Obtener el partido actual
+    const currentMatch = await this.matchDataSource.findById(matchId);
+    if (!currentMatch) {
+      throw new NotFoundError('Match not found');
+    }
+
+    // Verificar que el equipo esté en el partido
+    if (teamId !== currentMatch.homeTeamId && teamId !== currentMatch.awayTeamId) {
+      throw new ValidationError('Team is not part of this match');
+    }
+
+    // Obtener jugadores asistentes actuales
+    const attendingPlayers = currentMatch.attendingPlayers || {};
+    const teamIdStr = teamId.toString();
+
+    if (!attendingPlayers[teamIdStr]) {
+      attendingPlayers[teamIdStr] = [];
+    }
+
+    // Agregar jugador si no existe
+    if (!attendingPlayers[teamIdStr].includes(playerId)) {
+      attendingPlayers[teamIdStr].push(playerId);
+    }
+
+    const match = await this.matchDataSource.update(matchId, { attendingPlayers });
+    if (!match) {
+      throw new NotFoundError('Failed to update match');
+    }
+
+    this.logger.logInfo('MatchService: Player added to match successfully', {
+      matchId,
+      teamId,
+      playerId,
+    });
+    return match;
+  }
+
+  async removePlayerFromMatch(matchId: number, teamId: number, playerId: number): Promise<Match> {
+    this.logger.logInfo('MatchService: Removing player from match', { matchId, teamId, playerId });
+
+    if (!matchId || matchId <= 0) {
+      throw new ValidationError('Valid match ID is required');
+    }
+    if (!teamId || teamId <= 0) {
+      throw new ValidationError('Valid team ID is required');
+    }
+    if (!playerId || playerId <= 0) {
+      throw new ValidationError('Valid player ID is required');
+    }
+
+    // Obtener el partido actual
+    const currentMatch = await this.matchDataSource.findById(matchId);
+    if (!currentMatch) {
+      throw new NotFoundError('Match not found');
+    }
+
+    // Obtener jugadores asistentes actuales
+    const attendingPlayers = currentMatch.attendingPlayers || {};
+    const teamIdStr = teamId.toString();
+
+    if (attendingPlayers[teamIdStr]) {
+      attendingPlayers[teamIdStr] = attendingPlayers[teamIdStr].filter((id) => id !== playerId);
+
+      // Si no quedan jugadores, remover el equipo del objeto
+      if (attendingPlayers[teamIdStr].length === 0) {
+        delete attendingPlayers[teamIdStr];
+      }
+    }
+
+    const match = await this.matchDataSource.update(matchId, { attendingPlayers });
+    if (!match) {
+      throw new NotFoundError('Failed to update match');
+    }
+
+    this.logger.logInfo('MatchService: Player removed from match successfully', {
+      matchId,
+      teamId,
+      playerId,
+    });
+    return match;
+  }
+
+  async getAttendingPlayersByMatch(matchId: number): Promise<AttendingPlayers | null> {
+    this.logger.logInfo('MatchService: Getting attending players by match', { matchId });
+
+    if (!matchId || matchId <= 0) {
+      throw new ValidationError('Valid match ID is required');
+    }
+
+    const match = await this.matchDataSource.findById(matchId);
+    if (!match) {
+      throw new NotFoundError('Match not found');
+    }
+
+    this.logger.logInfo('MatchService: Attending players retrieved successfully', {
+      matchId,
+      hasAttendingPlayers: !!match.attendingPlayers,
+    });
+    return match.attendingPlayers || null;
+  }
+
+  private validateAttendingPlayers(attendingPlayers: AttendingPlayers): void {
+    if (!attendingPlayers || typeof attendingPlayers !== 'object') {
+      throw new ValidationError('Attending players must be an object');
+    }
+
+    for (const [teamId, playerIds] of Object.entries(attendingPlayers)) {
+      // Validar que teamId sea un número válido
+      const teamIdNum = parseInt(teamId);
+      if (isNaN(teamIdNum) || teamIdNum <= 0) {
+        throw new ValidationError(`Invalid team ID: ${teamId}`);
+      }
+
+      // Validar que playerIds sea un array
+      if (!Array.isArray(playerIds)) {
+        throw new ValidationError(`Player IDs for team ${teamId} must be an array`);
+      }
+
+      // Validar que todos los playerIds sean números válidos
+      for (const playerId of playerIds) {
+        if (typeof playerId !== 'number' || playerId <= 0) {
+          throw new ValidationError(`Invalid player ID: ${playerId} for team ${teamId}`);
+        }
+      }
+
+      // Validar que no haya playerIds duplicados
+      const uniquePlayerIds = [...new Set(playerIds)];
+      if (uniquePlayerIds.length !== playerIds.length) {
+        throw new ValidationError(`Duplicate player IDs found for team ${teamId}`);
+      }
     }
   }
 }

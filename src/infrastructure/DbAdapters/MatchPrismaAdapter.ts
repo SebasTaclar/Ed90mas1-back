@@ -8,6 +8,7 @@ import {
   PreDefinedFixture,
   MatchWithRelations,
   MatchStatus,
+  AttendingPlayers,
 } from '../../domain/entities/Match';
 import { MatchEventType } from '../../domain/entities/MatchEvent';
 import { Logger } from '../../shared/Logger';
@@ -28,6 +29,7 @@ export class MatchPrismaAdapter implements IMatchDataSource {
     return {
       ...match,
       status: match.status as MatchStatus,
+      attendingPlayers: match.attendingPlayers ? match.attendingPlayers : undefined,
     };
   }
 
@@ -35,6 +37,7 @@ export class MatchPrismaAdapter implements IMatchDataSource {
     return {
       ...match,
       status: match.status as MatchStatus,
+      attendingPlayers: match.attendingPlayers ? match.attendingPlayers : undefined,
       matchEvents:
         match.matchEvents?.map((event: any) => ({
           ...event,

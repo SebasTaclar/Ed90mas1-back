@@ -64,6 +64,17 @@ export class TournamentConfigurationPrismaAdapter implements ITournamentConfigur
     }
   }
 
+  async deleteConfigurationByTournamentId(tournamentId: number): Promise<boolean> {
+    try {
+      const result = await this.prisma.tournamentConfiguration.deleteMany({
+        where: { tournamentId },
+      });
+      return result.count > 0;
+    } catch (error) {
+      return false;
+    }
+  }
+
   // Tournament Groups Methods
   async getGroupsByTournamentId(tournamentId: number): Promise<TournamentGroup[]> {
     const groups = await this.prisma.tournamentGroup.findMany({

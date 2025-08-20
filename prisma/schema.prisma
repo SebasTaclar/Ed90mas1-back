@@ -179,6 +179,7 @@ model Match {
   matchNumber     Int                 @map("match_number")
   startTime       DateTime?           @map("start_time")
   endTime         DateTime?           @map("end_time")
+  attendingPlayers Json?              @map("attending_players") // JSON con jugadores que se presentaron: { "teamId": [playerId1, playerId2] }
   createdAt       DateTime            @default(now()) @map("created_at")
   updatedAt       DateTime            @updatedAt @map("updated_at")
   

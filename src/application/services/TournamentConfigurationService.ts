@@ -114,4 +114,40 @@ export class TournamentConfigurationService {
       throw error;
     }
   }
+
+  async deleteTournamentConfiguration(tournamentId: number): Promise<boolean> {
+    this.logger.logInfo(`Deleting tournament configuration for tournament: ${tournamentId}`);
+
+    if (!tournamentId || tournamentId <= 0) {
+      throw new ValidationError('Valid tournament ID is required');
+    }
+
+    try {
+      // Verificar que la configuración existe
+      const existingConfig =
+        await this.tournamentConfigDataSource.getConfigurationByTournamentId(tournamentId);
+
+      if (!existingConfig) {
+        throw new ValidationError(
+          `Tournament configuration not found for tournament ${tournamentId}`
+        );
+      }
+
+      // Eliminar assignments, grupos y configuración
+      await this.tournamentConfigDataSource.deleteAssignmentsByTournamentId(tournamentId);
+      await this.tournamentConfigDataSource.deleteGroupsByTournamentId(tournamentId);
+
+      // Eliminar la configuración principal
+      const deleted =
+        await this.tournamentConfigDataSource.deleteConfigurationByTournamentId(tournamentId);
+
+      this.logger.logInfo(
+        `Tournament configuration deleted successfully for tournament: ${tournamentId}`
+      );
+      return deleted;
+    } catch (error) {
+      this.logger.logError(`Error deleting tournament configuration for ${tournamentId}:`, error);
+      throw error;
+    }
+  }
 }

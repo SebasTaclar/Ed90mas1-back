@@ -13,6 +13,7 @@ export interface Match {
   matchNumber: number;
   startTime?: Date;
   endTime?: Date;
+  attendingPlayers?: AttendingPlayers;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +25,11 @@ export enum MatchStatus {
   CANCELLED = 'cancelled',
 }
 
+// Estructura para los jugadores que se presentaron al partido
+export interface AttendingPlayers {
+  [teamId: string]: number[]; // teamId como string y array de playerIds como numbers
+}
+
 export interface CreateMatchRequest {
   tournamentId: number;
   groupId?: number;
@@ -33,6 +39,7 @@ export interface CreateMatchRequest {
   location?: string;
   round?: string;
   matchNumber: number;
+  attendingPlayers?: AttendingPlayers;
 }
 
 export interface UpdateMatchRequest {
@@ -43,6 +50,7 @@ export interface UpdateMatchRequest {
   awayScore?: number;
   startTime?: Date;
   endTime?: Date;
+  attendingPlayers?: AttendingPlayers;
 }
 
 export interface GenerateFixtureRequest {
