@@ -24,6 +24,8 @@ const funcMatchFixtures = async (
         tournamentId,
       };
 
+      log.logInfo('Generate fixtures request received', { request });
+
       const fixtures = await matchService.generateFixture(request);
       return ApiResponseBuilder.success(
         fixtures,

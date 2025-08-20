@@ -54,6 +54,18 @@ export interface GenerateFixtureRequest {
   matchIntervalDays?: number; // Días entre partidos
   matchesPerDay?: number; // Partidos por día
   includePlayoffs?: boolean; // Si incluir fase eliminatoria
+  fixtureType?: string; // Tipo de fixture
+  fixtures?: PreDefinedFixture[]; // Fixtures predefinidas
+}
+
+export interface PreDefinedFixture {
+  homeTeamId: number;
+  awayTeamId: number;
+  date: string;
+  time: string;
+  location: string;
+  groupId?: string;
+  status?: MatchStatus;
 }
 
 export interface MatchWithRelations extends Match {

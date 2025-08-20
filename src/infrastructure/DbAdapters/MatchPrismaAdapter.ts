@@ -5,6 +5,7 @@ import {
   CreateMatchRequest,
   UpdateMatchRequest,
   GenerateFixtureRequest,
+  PreDefinedFixture,
   MatchWithRelations,
   MatchStatus,
 } from '../../domain/entities/Match';
@@ -189,9 +190,18 @@ export class MatchPrismaAdapter implements IMatchDataSource {
     try {
       this.logger.logInfo('Generating fixture for tournament', {
         tournamentId: request.tournamentId,
+        fixtureType: request.fixtureType,
+        hasPreDefinedFixtures: !!request.fixtures,
+        fixtureCount: request.fixtures?.length || 0,
       });
 
       return await this.prisma.$transaction(async (tx) => {
+        // Si hay fixtures predefinidas, usarlas
+        if (request.fixtures && request.fixtures.length > 0) {
+          return await this.createPreDefinedFixtures(tx, request);
+        }
+
+        // Lógica existente para generación automática
         // Get teams in tournament
         const teamTournaments = await tx.teamTournament.findMany({
           where: { tournamentId: request.tournamentId },
@@ -459,6 +469,57 @@ export class MatchPrismaAdapter implements IMatchDataSource {
       this.logger.logError('Error finding upcoming matches', error);
       throw new Error('Failed to retrieve upcoming matches');
     }
+  }
+
+  private async createPreDefinedFixtures(
+    tx: any,
+    request: GenerateFixtureRequest
+  ): Promise<Match[]> {
+    const matches: Match[] = [];
+
+    // Get the current highest match number for this tournament
+    const lastMatch = await tx.match.findFirst({
+      where: { tournamentId: request.tournamentId },
+      orderBy: { matchNumber: 'desc' },
+    });
+
+    let currentMatchNumber = (lastMatch?.matchNumber || 0) + 1;
+
+    for (const fixture of request.fixtures!) {
+      // Combinar fecha y hora
+      const matchDateTime = new Date(`${fixture.date}T${fixture.time}`);
+
+      this.logger.logInfo('Creating predefined fixture', {
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        location: fixture.location,
+        matchDateTime,
+        groupId: fixture.groupId,
+      });
+
+      const match = await tx.match.create({
+        data: {
+          tournamentId: request.tournamentId,
+          groupId: fixture.groupId ? parseInt(fixture.groupId) : undefined,
+          homeTeamId: fixture.homeTeamId,
+          awayTeamId: fixture.awayTeamId,
+          matchDate: matchDateTime,
+          location: fixture.location, // Usar la ubicación específica de cada fixture
+          round: request.round || 'Group Stage',
+          status: fixture.status || MatchStatus.SCHEDULED,
+          matchNumber: currentMatchNumber++,
+        },
+      });
+
+      matches.push(this.convertMatchToDomain(match));
+    }
+
+    this.logger.logInfo('Predefined fixtures created successfully', {
+      tournamentId: request.tournamentId,
+      count: matches.length,
+    });
+
+    return matches;
   }
 
   private async validateTeamsInTournament(

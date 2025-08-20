@@ -255,6 +255,7 @@ export class MatchService {
     const config = await this.tournamentConfigurationDataSource.getConfigurationByTournamentId(
       request.tournamentId
     );
+
     if (!config) {
       throw new ValidationError('Tournament configuration not found');
     }
