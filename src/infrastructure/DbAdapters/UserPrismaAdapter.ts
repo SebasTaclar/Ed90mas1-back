@@ -1,4 +1,4 @@
-import { getPrismaClient } from '../../config/PrismaClient';
+import { getPrismaClient, handlePrismaError } from '../../config/PrismaClient';
 import { IUserDataSource } from '../../domain/interfaces/IUserDataSource';
 import { User } from '../../domain/entities/User';
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -64,34 +64,48 @@ export class UserPrismaAdapter implements IUserDataSource {
   }
 
   public async getByEmail(email: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        name: true,
-        role: true,
-        membershipPaid: true,
-        team: {
-          select: {
-            id: true,
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          email: true,
+          password: true,
+          name: true,
+          role: true,
+          membershipPaid: true,
+          team: {
+            select: {
+              id: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!user) return null;
+      if (!user) return null;
 
-    return {
-      id: user.id,
-      email: user.email,
-      password: user.password,
-      name: user.name,
-      role: user.role,
-      membershipPaid: user.membershipPaid,
-      teamId: user.team?.id,
-    } as User;
+      return {
+        id: user.id,
+        email: user.email,
+        password: user.password,
+        name: user.name,
+        role: user.role,
+        membershipPaid: user.membershipPaid,
+        teamId: user.team?.id,
+      } as User;
+    } catch (error: any) {
+      // Handle connection limit errors specifically
+      if (
+        error.message?.includes('Too many database connections') ||
+        error.message?.includes('remaining connection slots are reserved')
+      ) {
+        console.error('[UserPrismaAdapter] Database connection limit exceeded in getByEmail');
+        handlePrismaError(error);
+      }
+
+      console.error('[UserPrismaAdapter] Error in getByEmail:', error);
+      throw error;
+    }
   }
 
   public async create(user: User): Promise<User> {
