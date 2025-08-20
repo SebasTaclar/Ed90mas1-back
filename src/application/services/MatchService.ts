@@ -125,10 +125,7 @@ export class MatchService {
       throw new NotFoundError('Match not found');
     }
 
-    // Validar cambios de estado
-    if (request.status) {
-      this.validateStatusTransition(existingMatch.status, request.status);
-    }
+    // Validaciones de estado removidas - el frontend maneja la lógica de estados
 
     const updatedMatch = await this.matchDataSource.update(id, request);
     if (!updatedMatch) {
@@ -380,20 +377,6 @@ export class MatchService {
 
     if (request.matchDate < new Date()) {
       throw new ValidationError('Match date cannot be in the past');
-    }
-  }
-
-  private validateStatusTransition(currentStatus: string, newStatus: MatchStatus): void {
-    const validTransitions: { [key: string]: MatchStatus[] } = {
-      [MatchStatus.SCHEDULED]: [MatchStatus.IN_PROGRESS, MatchStatus.CANCELLED],
-      [MatchStatus.IN_PROGRESS]: [MatchStatus.FINISHED, MatchStatus.CANCELLED],
-      [MatchStatus.FINISHED]: [], // No se puede cambiar desde finalizado
-      [MatchStatus.CANCELLED]: [], // No se puede cambiar desde cancelado
-    };
-
-    const allowedTransitions = validTransitions[currentStatus] || [];
-    if (!allowedTransitions.includes(newStatus)) {
-      throw new ValidationError(`Invalid status transition from ${currentStatus} to ${newStatus}`);
     }
   }
 
