@@ -61,12 +61,11 @@ export class TournamentConfigurationService {
     }
 
     try {
-      const [configuration, groups, assignments] = await Promise.all([
-        this.tournamentConfigDataSource.getConfigurationByTournamentId(tournamentId),
-        this.tournamentConfigDataSource.getGroupsByTournamentId(tournamentId),
-        this.tournamentConfigDataSource.getAssignmentsByTournamentId(tournamentId),
-      ]);
-
+      const configuration =
+        await this.tournamentConfigDataSource.getConfigurationByTournamentId(tournamentId);
+      const groups = await this.tournamentConfigDataSource.getGroupsByTournamentId(tournamentId);
+      const assignments =
+        await this.tournamentConfigDataSource.getAssignmentsByTournamentId(tournamentId);
       return {
         configuration,
         groups,

@@ -335,45 +335,47 @@ export class MatchStatisticsPrismaAdapter implements IMatchStatisticsDataSource 
         playerCount: playerIds.length,
       });
 
-      const results = await Promise.all(
-        playerIds.map(async (playerId) => {
-          const player = await this.prisma.player.findUnique({
-            where: { id: playerId },
-            select: { teamId: true },
-          });
+      // Process players SEQUENTIALLY to avoid multiple DB connections
+      const results: MatchStatistics[] = [];
+      for (const playerId of playerIds) {
+        const player = await this.prisma.player.findUnique({
+          where: { id: playerId },
+          select: { teamId: true },
+        });
 
-          if (!player) {
-            throw new Error(`Player ${playerId} not found`);
-          }
+        if (!player) {
+          throw new Error(`Player ${playerId} not found`);
+        }
 
-          return await this.prisma.matchStatistics.upsert({
-            where: {
-              matchId_playerId: {
-                matchId,
-                playerId,
-              },
-            },
-            update: {}, // No actualizar si ya existe
-            create: {
+        const result = await this.prisma.matchStatistics.upsert({
+          where: {
+            matchId_playerId: {
               matchId,
               playerId,
-              teamId: player.teamId,
-              minutesPlayed: 0,
-              goals: 0,
-              assists: 0,
-              yellowCards: 0,
-              redCards: 0,
-              shotsOnTarget: 0,
-              shotsOffTarget: 0,
-              foulsCommitted: 0,
-              foulsReceived: 0,
-              corners: 0,
-              offsides: 0,
-              saves: 0,
             },
-          });
-        })
-      );
+          },
+          update: {}, // No actualizar si ya existe
+          create: {
+            matchId,
+            playerId,
+            teamId: player.teamId,
+            minutesPlayed: 0,
+            goals: 0,
+            assists: 0,
+            yellowCards: 0,
+            redCards: 0,
+            shotsOnTarget: 0,
+            shotsOffTarget: 0,
+            foulsCommitted: 0,
+            foulsReceived: 0,
+            corners: 0,
+            offsides: 0,
+            saves: 0,
+          },
+        });
+
+        results.push(result);
+      }
 
       this.logger.logInfo('Match statistics initialized successfully', { matchId });
       return results;

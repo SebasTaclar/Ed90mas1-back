@@ -101,30 +101,31 @@ export class TournamentService {
 
     const tournaments = await this.tournamentDataSource.findAll();
 
-    // Enrich tournaments with configuration data
-    const enrichedTournaments = await Promise.all(
-      tournaments.map(async (tournament) => {
-        try {
-          const configuration =
-            await this.tournamentConfigurationService.getTournamentConfiguration(tournament.id);
-          return {
-            ...tournament,
-            configuration: configuration.configuration,
-            groups: configuration.groups,
-            teamAssignments: configuration.assignments,
-          };
-        } catch (error) {
-          // If configuration doesn't exist, just return tournament without config
-          this.logger.logWarning(`No configuration found for tournament ${tournament.id}`, error);
-          return {
-            ...tournament,
-            configuration: null,
-            groups: [],
-            teamAssignments: [],
-          };
-        }
-      })
-    );
+    // Enrich tournaments with configuration data SEQUENTIALLY to avoid multiple DB connections
+    const enrichedTournaments = [];
+    for (const tournament of tournaments) {
+      try {
+        this.logger.logInfo(`Processing tournament ${tournament.id} configuration sequentially`);
+        const configuration = await this.tournamentConfigurationService.getTournamentConfiguration(
+          tournament.id
+        );
+        enrichedTournaments.push({
+          ...tournament,
+          configuration: configuration.configuration,
+          groups: configuration.groups,
+          teamAssignments: configuration.assignments,
+        });
+      } catch (error) {
+        // If configuration doesn't exist, just return tournament without config
+        this.logger.logWarning(`No configuration found for tournament ${tournament.id}`, error);
+        enrichedTournaments.push({
+          ...tournament,
+          configuration: null,
+          groups: [],
+          teamAssignments: [],
+        });
+      }
+    }
 
     this.logger.logInfo('TournamentService: Tournaments retrieved with configuration', {
       count: enrichedTournaments.length,
