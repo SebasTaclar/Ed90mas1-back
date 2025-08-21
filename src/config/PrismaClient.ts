@@ -6,11 +6,6 @@ export const getPrismaClient = (): PrismaClient => {
   if (!prisma) {
     prisma = new PrismaClient({
       log: ['query', 'info', 'warn', 'error'],
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL + '?connection_limit=1&pool_timeout=20',
-        },
-      },
     });
   }
   return prisma;
