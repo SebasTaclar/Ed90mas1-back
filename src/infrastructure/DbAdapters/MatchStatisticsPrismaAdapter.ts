@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '../../config/PrismaClient';
 import { IMatchStatisticsDataSource } from '../../domain/interfaces/IMatchStatisticsDataSource';
 import {
   MatchStatistics,
@@ -12,10 +12,9 @@ import {
 import { Logger } from '../../shared/Logger';
 
 export class MatchStatisticsPrismaAdapter implements IMatchStatisticsDataSource {
-  constructor(
-    private prisma: PrismaClient,
-    private logger: Logger
-  ) {}
+  private readonly prisma = getPrismaClient();
+
+  constructor(private logger: Logger) {}
 
   async create(request: CreateMatchStatisticsRequest): Promise<MatchStatistics> {
     try {

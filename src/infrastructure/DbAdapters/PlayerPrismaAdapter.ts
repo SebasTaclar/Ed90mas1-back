@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '../../config/PrismaClient';
 import { Logger } from '../../shared/Logger';
 import { IPlayerDataSource } from '../../domain/interfaces/IPlayerDataSource';
 import {
@@ -10,10 +10,9 @@ import {
 import { ValidationError, NotFoundError, ConflictError } from '../../shared/exceptions';
 
 export class PlayerPrismaAdapter implements IPlayerDataSource {
-  constructor(
-    private prisma: PrismaClient,
-    private logger: Logger
-  ) {}
+  private readonly prisma = getPrismaClient();
+
+  constructor(private logger: Logger) {}
 
   async create(playerData: CreatePlayerRequest): Promise<Player> {
     try {

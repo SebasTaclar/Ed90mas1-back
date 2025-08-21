@@ -28,12 +28,12 @@ import { IPlayerDataSource } from '../domain/interfaces/IPlayerDataSource';
 import { IMatchDataSource } from '../domain/interfaces/IMatchDataSource';
 import { IMatchEventDataSource } from '../domain/interfaces/IMatchEventDataSource';
 import { IMatchStatisticsDataSource } from '../domain/interfaces/IMatchStatisticsDataSource';
-import { getPrismaClient } from '../config/PrismaClient';
 
 /**
  * Service Provider para inyección de dependencias
  * Centraliza la creación de servicios y manejo de dependencias
- * Implementa patrón singleton para evitar múltiples instancias
+ * Implementa patrón singleton para adapters de datos (para compartir conexión DB)
+ * Los servicios se crean como nuevas instancias en cada invocación
  */
 export class ServiceProvider {
   // Cache de instancias singleton para adapters
@@ -48,30 +48,13 @@ export class ServiceProvider {
   private static matchEventDataSource: IMatchEventDataSource | null = null;
   private static matchStatisticsDataSource: IMatchStatisticsDataSource | null = null;
 
-  // Cache de servicios singleton
-  private static authService: AuthService | null = null;
-  private static healthService: HealthService | null = null;
-  private static categoryService: CategoryService | null = null;
-  private static tournamentService: TournamentService | null = null;
-  private static tournamentConfigurationService: TournamentConfigurationService | null = null;
-  private static teamService: TeamService | null = null;
-  private static playerService: PlayerService | null = null;
-  private static matchService: MatchService | null = null;
-  private static matchEventService: MatchEventService | null = null;
-  private static matchStatisticsService: MatchStatisticsService | null = null;
-
-  // Usar función para obtener la instancia global cada vez
-  private static getPrismaClient() {
-    return getPrismaClient();
-  }
-
   /**
    * Obtiene la instancia singleton de UserDataSource
    */
-  static getUserDataSource(): UserPrismaAdapter {
+  static getUserDataSource(logger: Logger): UserPrismaAdapter {
     if (!this.userDataSource) {
       console.log('🔄 Creating new UserPrismaAdapter singleton');
-      this.userDataSource = new UserPrismaAdapter(this.getPrismaClient());
+      this.userDataSource = new UserPrismaAdapter(logger);
     }
     return this.userDataSource;
   }
@@ -82,7 +65,7 @@ export class ServiceProvider {
   static getCategoryDataSource(logger: Logger): ICategoryDataSource {
     if (!this.categoryDataSource) {
       console.log('🔄 Creating new CategoryPrismaAdapter singleton');
-      this.categoryDataSource = new CategoryPrismaAdapter(this.getPrismaClient(), logger);
+      this.categoryDataSource = new CategoryPrismaAdapter(logger);
     }
     return this.categoryDataSource;
   }
@@ -93,7 +76,7 @@ export class ServiceProvider {
   static getTournamentDataSource(logger: Logger): ITournamentDataSource {
     if (!this.tournamentDataSource) {
       console.log('🔄 Creating new TournamentPrismaAdapter singleton');
-      this.tournamentDataSource = new TournamentPrismaAdapter(this.getPrismaClient(), logger);
+      this.tournamentDataSource = new TournamentPrismaAdapter(logger);
     }
     return this.tournamentDataSource;
   }
@@ -104,9 +87,7 @@ export class ServiceProvider {
   static getTournamentConfigurationDataSource(): ITournamentConfigurationDataSource {
     if (!this.tournamentConfigurationDataSource) {
       console.log('🔄 Creating new TournamentConfigurationPrismaAdapter singleton');
-      this.tournamentConfigurationDataSource = new TournamentConfigurationPrismaAdapter(
-        this.getPrismaClient()
-      );
+      this.tournamentConfigurationDataSource = new TournamentConfigurationPrismaAdapter();
     }
     return this.tournamentConfigurationDataSource;
   }
@@ -117,8 +98,8 @@ export class ServiceProvider {
   static getTeamDataSource(logger: Logger): ITeamDataSource {
     if (!this.teamDataSource) {
       console.log('🔄 Creating new TeamPrismaAdapter singleton');
-      const userAdapter = this.getUserDataSource(); // Ya devuelve UserPrismaAdapter
-      this.teamDataSource = new TeamPrismaAdapter(this.getPrismaClient(), logger, userAdapter);
+      const userAdapter = this.getUserDataSource(logger); // Ya devuelve UserPrismaAdapter
+      this.teamDataSource = new TeamPrismaAdapter(logger, userAdapter);
     }
     return this.teamDataSource;
   }
@@ -129,7 +110,7 @@ export class ServiceProvider {
   static getMatchDataSource(logger: Logger): IMatchDataSource {
     if (!this.matchDataSource) {
       console.log('🔄 Creating new MatchPrismaAdapter singleton');
-      this.matchDataSource = new MatchPrismaAdapter(this.getPrismaClient(), logger);
+      this.matchDataSource = new MatchPrismaAdapter(logger);
     }
     return this.matchDataSource;
   }
@@ -140,7 +121,7 @@ export class ServiceProvider {
   static getMatchEventDataSource(logger: Logger): IMatchEventDataSource {
     if (!this.matchEventDataSource) {
       console.log('🔄 Creating new MatchEventPrismaAdapter singleton');
-      this.matchEventDataSource = new MatchEventPrismaAdapter(this.getPrismaClient(), logger);
+      this.matchEventDataSource = new MatchEventPrismaAdapter(logger);
     }
     return this.matchEventDataSource;
   }
@@ -151,10 +132,7 @@ export class ServiceProvider {
   static getMatchStatisticsDataSource(logger: Logger): IMatchStatisticsDataSource {
     if (!this.matchStatisticsDataSource) {
       console.log('🔄 Creating new MatchStatisticsPrismaAdapter singleton');
-      this.matchStatisticsDataSource = new MatchStatisticsPrismaAdapter(
-        this.getPrismaClient(),
-        logger
-      );
+      this.matchStatisticsDataSource = new MatchStatisticsPrismaAdapter(logger);
     }
     return this.matchStatisticsDataSource;
   }
@@ -165,170 +143,128 @@ export class ServiceProvider {
   static getPlayerDataSource(logger: Logger): IPlayerDataSource {
     if (!this.playerDataSource) {
       console.log('🔄 Creating new PlayerPrismaAdapter singleton');
-      this.playerDataSource = new PlayerPrismaAdapter(this.getPrismaClient(), logger);
+      this.playerDataSource = new PlayerPrismaAdapter(logger);
     }
     return this.playerDataSource;
   }
 
   /**
-   * Obtiene la instancia singleton de AuthService
+   * Crea una nueva instancia de AuthService
    */
   static getAuthService(logger: Logger): AuthService {
-    if (!this.authService) {
-      console.log('🔄 Creating new AuthService singleton');
-      const userDataSource = this.getUserDataSource();
-      this.authService = new AuthService(logger, userDataSource);
-    }
-    return this.authService;
+    console.log('🔄 Creating new AuthService instance');
+    const userDataSource = this.getUserDataSource(logger);
+    return new AuthService(logger, userDataSource);
   }
 
   /**
-   * Obtiene la instancia singleton de HealthService
+   * Crea una nueva instancia de HealthService
    */
   static getHealthService(logger: Logger): HealthService {
-    if (!this.healthService) {
-      console.log('🔄 Creating new HealthService singleton');
-      this.healthService = new HealthService(logger);
-    }
-    return this.healthService;
+    console.log('🔄 Creating new HealthService instance');
+    return new HealthService(logger);
   }
 
   /**
-   * Obtiene la instancia singleton de CategoryService
+   * Crea una nueva instancia de CategoryService
    */
   static getCategoryService(logger: Logger): CategoryService {
-    if (!this.categoryService) {
-      console.log('🔄 Creating new CategoryService singleton');
-      const categoryDataSource = this.getCategoryDataSource(logger);
-      const tournamentDataSource = this.getTournamentDataSource(logger);
-      this.categoryService = new CategoryService(categoryDataSource, tournamentDataSource, logger);
-    }
-    return this.categoryService;
+    console.log('🔄 Creating new CategoryService instance');
+    const categoryDataSource = this.getCategoryDataSource(logger);
+    const tournamentDataSource = this.getTournamentDataSource(logger);
+    return new CategoryService(categoryDataSource, tournamentDataSource, logger);
   }
 
   /**
-   * Obtiene la instancia singleton de TournamentService
+   * Crea una nueva instancia de TournamentService
    */
   static getTournamentService(logger: Logger): TournamentService {
-    if (!this.tournamentService) {
-      console.log('🔄 Creating new TournamentService singleton');
-      const tournamentDataSource = this.getTournamentDataSource(logger);
-      const categoryDataSource = this.getCategoryDataSource(logger);
-      const teamDataSource = this.getTeamDataSource(logger);
-      const tournamentConfigurationService = this.getTournamentConfigurationService(logger);
-      this.tournamentService = new TournamentService(
-        tournamentDataSource,
-        categoryDataSource,
-        teamDataSource,
-        tournamentConfigurationService,
-        logger
-      );
-    }
-    return this.tournamentService;
+    console.log('🔄 Creating new TournamentService instance');
+    const tournamentDataSource = this.getTournamentDataSource(logger);
+    const categoryDataSource = this.getCategoryDataSource(logger);
+    const teamDataSource = this.getTeamDataSource(logger);
+    const tournamentConfigurationService = this.getTournamentConfigurationService(logger);
+    return new TournamentService(
+      tournamentDataSource,
+      categoryDataSource,
+      teamDataSource,
+      tournamentConfigurationService,
+      logger
+    );
   }
 
   /**
-   * Obtiene la instancia singleton de TournamentConfigurationService
+   * Crea una nueva instancia de TournamentConfigurationService
    */
   static getTournamentConfigurationService(logger: Logger): TournamentConfigurationService {
-    if (!this.tournamentConfigurationService) {
-      console.log('🔄 Creating new TournamentConfigurationService singleton');
-      const tournamentConfigDataSource = this.getTournamentConfigurationDataSource();
-      this.tournamentConfigurationService = new TournamentConfigurationService(
-        logger,
-        tournamentConfigDataSource
-      );
-    }
-    return this.tournamentConfigurationService;
+    console.log('🔄 Creating new TournamentConfigurationService instance');
+    const tournamentConfigDataSource = this.getTournamentConfigurationDataSource();
+    return new TournamentConfigurationService(logger, tournamentConfigDataSource);
   }
 
   /**
-   * Obtiene la instancia singleton de TeamService
+   * Crea una nueva instancia de TeamService
    */
   static getTeamService(logger: Logger): TeamService {
-    if (!this.teamService) {
-      console.log('🔄 Creating new TeamService singleton');
-      const teamDataSource = this.getTeamDataSource(logger);
-      const tournamentDataSource = this.getTournamentDataSource(logger);
-      const userDataSource = this.getUserDataSource();
-      this.teamService = new TeamService(
-        teamDataSource,
-        tournamentDataSource,
-        userDataSource,
-        logger
-      );
-    }
-    return this.teamService;
+    console.log('🔄 Creating new TeamService instance');
+    const teamDataSource = this.getTeamDataSource(logger);
+    const tournamentDataSource = this.getTournamentDataSource(logger);
+    const userDataSource = this.getUserDataSource(logger);
+    return new TeamService(teamDataSource, tournamentDataSource, userDataSource, logger);
   }
 
   /**
-   * Obtiene la instancia singleton de PlayerService
+   * Crea una nueva instancia de PlayerService
    */
   static getPlayerService(logger: Logger): PlayerService {
-    if (!this.playerService) {
-      console.log('🔄 Creating new PlayerService singleton');
-      const playerDataSource = this.getPlayerDataSource(logger);
-      const teamDataSource = this.getTeamDataSource(logger);
-      this.playerService = new PlayerService(playerDataSource, teamDataSource, logger);
-    }
-    return this.playerService;
+    console.log('🔄 Creating new PlayerService instance');
+    const playerDataSource = this.getPlayerDataSource(logger);
+    const teamDataSource = this.getTeamDataSource(logger);
+    return new PlayerService(playerDataSource, teamDataSource, logger);
   }
 
   /**
-   * Obtiene la instancia singleton de MatchService
+   * Crea una nueva instancia de MatchService
    */
   static getMatchService(logger: Logger): MatchService {
-    if (!this.matchService) {
-      console.log('🔄 Creating new MatchService singleton');
-      const matchDataSource = this.getMatchDataSource(logger);
-      const matchEventDataSource = this.getMatchEventDataSource(logger);
-      const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
-      const tournamentConfigDataSource = this.getTournamentConfigurationDataSource();
-      this.matchService = new MatchService(
-        matchDataSource,
-        matchEventDataSource,
-        matchStatisticsDataSource,
-        tournamentConfigDataSource,
-        logger
-      );
-    }
-    return this.matchService;
+    console.log('🔄 Creating new MatchService instance');
+    const matchDataSource = this.getMatchDataSource(logger);
+    const matchEventDataSource = this.getMatchEventDataSource(logger);
+    const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
+    const tournamentConfigDataSource = this.getTournamentConfigurationDataSource();
+    return new MatchService(
+      matchDataSource,
+      matchEventDataSource,
+      matchStatisticsDataSource,
+      tournamentConfigDataSource,
+      logger
+    );
   }
 
   /**
-   * Obtiene la instancia singleton de MatchEventService
+   * Crea una nueva instancia de MatchEventService
    */
   static getMatchEventService(logger: Logger): MatchEventService {
-    if (!this.matchEventService) {
-      console.log('🔄 Creating new MatchEventService singleton');
-      const matchEventDataSource = this.getMatchEventDataSource(logger);
-      const matchDataSource = this.getMatchDataSource(logger);
-      const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
-      this.matchEventService = new MatchEventService(
-        matchEventDataSource,
-        matchDataSource,
-        matchStatisticsDataSource,
-        logger
-      );
-    }
-    return this.matchEventService;
+    console.log('🔄 Creating new MatchEventService instance');
+    const matchEventDataSource = this.getMatchEventDataSource(logger);
+    const matchDataSource = this.getMatchDataSource(logger);
+    const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
+    return new MatchEventService(
+      matchEventDataSource,
+      matchDataSource,
+      matchStatisticsDataSource,
+      logger
+    );
   }
 
   /**
-   * Obtiene la instancia singleton de MatchStatisticsService
+   * Crea una nueva instancia de MatchStatisticsService
    */
   static getMatchStatisticsService(logger: Logger): MatchStatisticsService {
-    if (!this.matchStatisticsService) {
-      console.log('🔄 Creating new MatchStatisticsService singleton');
-      const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
-      const matchDataSource = this.getMatchDataSource(logger);
-      this.matchStatisticsService = new MatchStatisticsService(
-        matchStatisticsDataSource,
-        matchDataSource,
-        logger
-      );
-    }
-    return this.matchStatisticsService;
+    console.log('🔄 Creating new MatchStatisticsService instance');
+    const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
+    const matchDataSource = this.getMatchDataSource(logger);
+    return new MatchStatisticsService(matchStatisticsDataSource, matchDataSource, logger);
   }
 
   /**
@@ -370,8 +306,8 @@ export const getPlayerService = (logger: Logger): PlayerService => {
   return ServiceProvider.getPlayerService(logger);
 };
 
-export const getUserDataSource = (): UserPrismaAdapter => {
-  return ServiceProvider.getUserDataSource();
+export const getUserDataSource = (logger: Logger): UserPrismaAdapter => {
+  return ServiceProvider.getUserDataSource(logger);
 };
 
 export const getMatchService = (logger: Logger): MatchService => {

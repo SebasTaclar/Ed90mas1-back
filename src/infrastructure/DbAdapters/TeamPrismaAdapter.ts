@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { ITeamDataSource } from '../../domain/interfaces/ITeamDataSource';
 import {
   Team,
@@ -11,10 +10,12 @@ import { PasswordUtils } from '../../shared/PasswordUtils';
 import { USER_ROLES } from '../../shared/UserRoles';
 import { UserPrismaAdapter } from './UserPrismaAdapter';
 import { ConflictError, NotFoundError } from '../../shared/exceptions';
+import { getPrismaClient } from '../../config/PrismaClient';
 
 export class TeamPrismaAdapter implements ITeamDataSource {
+  private readonly prisma = getPrismaClient();
+
   constructor(
-    private prisma: PrismaClient,
     private logger: Logger,
     private userAdapter: UserPrismaAdapter
   ) {}

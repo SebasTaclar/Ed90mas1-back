@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { ITournamentDataSource } from '../../domain/interfaces/ITournamentDataSource';
 import {
   Tournament,
@@ -7,12 +6,12 @@ import {
 } from '../../domain/entities/Tournament';
 import { Logger } from '../../shared/Logger';
 import { NotFoundError } from '../../shared/exceptions';
+import { getPrismaClient } from '../../config/PrismaClient';
 
 export class TournamentPrismaAdapter implements ITournamentDataSource {
-  constructor(
-    private prisma: PrismaClient,
-    private logger: Logger
-  ) {}
+  private readonly prisma = getPrismaClient();
+
+  constructor(private logger: Logger) {}
 
   async create(tournamentData: CreateTournamentRequest): Promise<Tournament> {
     try {

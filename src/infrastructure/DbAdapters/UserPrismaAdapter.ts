@@ -1,14 +1,13 @@
-import { getPrismaClient } from '../../config/PrismaClient';
 import { IUserDataSource } from '../../domain/interfaces/IUserDataSource';
 import { User } from '../../domain/entities/User';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { getPrismaClient } from '../../config/PrismaClient';
+import { Logger } from '../../shared/Logger';
 
 export class UserPrismaAdapter implements IUserDataSource {
-  private readonly prisma: PrismaClient;
+  private readonly prisma = getPrismaClient();
 
-  constructor(prismaClient?: PrismaClient) {
-    this.prisma = prismaClient || getPrismaClient();
-  }
+  constructor(private logger: Logger) {}
 
   public async getAll(query?: unknown): Promise<User[]> {
     let whereClause: Prisma.UserWhereInput = {};
@@ -94,7 +93,7 @@ export class UserPrismaAdapter implements IUserDataSource {
         teamId: user.team?.id,
       } as User;
     } catch (error: any) {
-      console.error('[UserPrismaAdapter] Error in getByEmail:', error);
+      this.logger.logError('[UserPrismaAdapter] Error in getByEmail:', error);
       throw error;
     }
   }

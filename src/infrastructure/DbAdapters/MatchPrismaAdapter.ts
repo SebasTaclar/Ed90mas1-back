@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '../../config/PrismaClient';
 import { IMatchDataSource } from '../../domain/interfaces/IMatchDataSource';
 import {
   Match,
@@ -15,12 +15,10 @@ import { Logger } from '../../shared/Logger';
 import { NotFoundError, ValidationError } from '../../shared/exceptions';
 
 export class MatchPrismaAdapter implements IMatchDataSource {
+  private readonly prisma = getPrismaClient();
   private logger: Logger;
 
-  constructor(
-    private prisma: PrismaClient,
-    logger?: Logger
-  ) {
+  constructor(logger?: Logger) {
     this.logger = logger || new Logger(console as any);
   }
 

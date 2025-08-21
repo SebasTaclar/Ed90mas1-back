@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { ICategoryDataSource } from '../../domain/interfaces/ICategoryDataSource';
 import {
   Category,
@@ -7,12 +6,12 @@ import {
 } from '../../domain/entities/Category';
 import { Logger } from '../../shared/Logger';
 import { ConflictError, NotFoundError } from '../../shared/exceptions';
+import { getPrismaClient } from '../../config/PrismaClient';
 
 export class CategoryPrismaAdapter implements ICategoryDataSource {
-  constructor(
-    private prisma: PrismaClient,
-    private logger: Logger
-  ) {}
+  private readonly prisma = getPrismaClient();
+
+  constructor(private logger: Logger) {}
 
   async create(categoryData: CreateCategoryRequest): Promise<Category> {
     try {
