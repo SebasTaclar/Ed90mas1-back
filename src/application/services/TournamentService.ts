@@ -96,7 +96,7 @@ export class TournamentService {
     return tournament;
   }
 
-  async getAllTournaments(): Promise<any[]> {
+  async getAllTournaments(): Promise<unknown[]> {
     this.logger.logInfo('TournamentService: Getting all tournaments');
 
     const tournaments = await this.tournamentDataSource.findAll();

@@ -3,7 +3,6 @@ import { ValidationError } from '../../shared/exceptions';
 import { ITournamentConfigurationDataSource } from '../../domain/interfaces/ITournamentConfigurationDataSource';
 import {
   TournamentConfiguration,
-  CreateTournamentConfigurationRequest,
   UpdateTournamentConfigurationRequest,
 } from '../../domain/entities/TournamentConfiguration';
 import { ConfigureTournamentRequest } from '../../domain/entities/TeamGroupAssignment';
