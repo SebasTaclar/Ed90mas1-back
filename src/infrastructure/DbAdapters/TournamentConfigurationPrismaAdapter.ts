@@ -15,11 +15,12 @@ import {
   ConfigureTournamentRequest,
 } from '../../domain/entities/TeamGroupAssignment';
 import { Prisma } from '@prisma/client';
+import { Logger } from '../../shared/Logger';
 
 export class TournamentConfigurationPrismaAdapter implements ITournamentConfigurationDataSource {
   private readonly prisma = getPrismaClient();
 
-  constructor() {}
+  constructor(private logger: Logger) {}
 
   // Tournament Configuration Methods
   async getConfigurationByTournamentId(
@@ -73,6 +74,7 @@ export class TournamentConfigurationPrismaAdapter implements ITournamentConfigur
       });
       return result.count > 0;
     } catch (error) {
+      this.logger.logError('Error deleting tournament configuration', error);
       return false;
     }
   }
@@ -104,6 +106,7 @@ export class TournamentConfigurationPrismaAdapter implements ITournamentConfigur
       });
       return true;
     } catch (error) {
+      this.logger.logError('Error deleting tournament groups', error);
       return false;
     }
   }
@@ -134,6 +137,7 @@ export class TournamentConfigurationPrismaAdapter implements ITournamentConfigur
       });
       return true;
     } catch (error) {
+      this.logger.logError('Error deleting team group assignments', error);
       return false;
     }
   }

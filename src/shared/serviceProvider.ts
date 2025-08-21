@@ -64,7 +64,7 @@ export class ServiceProvider {
    */
   static getTournamentConfigurationDataSource(logger: Logger): ITournamentConfigurationDataSource {
     console.log('🔄 Creating new TournamentConfigurationPrismaAdapter instance');
-    return new TournamentConfigurationPrismaAdapter();
+    return new TournamentConfigurationPrismaAdapter(logger);
   }
 
   /**
