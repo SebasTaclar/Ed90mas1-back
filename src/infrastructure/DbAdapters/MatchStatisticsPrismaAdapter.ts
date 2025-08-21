@@ -442,25 +442,51 @@ export class MatchStatisticsPrismaAdapter implements IMatchStatisticsDataSource 
     limit = 50
   ): Promise<PlayerTournamentStats[]> {
     try {
-      // Query SQL para obtener estadísticas agregadas de jugadores
+      // Query SQL para obtener estadísticas de jugadores usando match_events
       const stats = await this.prisma.$queryRaw<PlayerTournamentStats[]>`
+        WITH player_events AS (
+          SELECT 
+            p.id as player_id,
+            p.first_name,
+            p.last_name,
+            t.name as team_name,
+            me.match_id,
+            me.event_type
+          FROM players p
+          JOIN teams t ON p.team_id = t.id
+          LEFT JOIN match_events me ON p.id = me.player_id
+          LEFT JOIN matches m ON me.match_id = m.id
+          WHERE m.tournament_id = ${tournamentId} 
+            AND m.status != 'scheduled'
+        ),
+        player_stats AS (
+          SELECT 
+            player_id,
+            first_name,
+            last_name,
+            team_name,
+            COUNT(DISTINCT match_id) as matches_played,
+            COUNT(CASE WHEN event_type = 'goal' THEN 1 END) as goals,
+            COUNT(CASE WHEN event_type = 'assist' THEN 1 END) as assists,
+            COUNT(CASE WHEN event_type = 'yellow_card' THEN 1 END) as yellow_cards,
+            COUNT(CASE WHEN event_type = 'red_card' THEN 1 END) as red_cards
+          FROM player_events
+          WHERE player_id IS NOT NULL
+          GROUP BY player_id, first_name, last_name, team_name
+        )
         SELECT 
-          p.id as "playerId",
-          p.first_name as "firstName",
-          p.last_name as "lastName",
-          t.name as "teamName",
-          COALESCE(SUM(ms.goals), 0)::int as goals,
-          COALESCE(SUM(ms.assists), 0)::int as assists,
-          COALESCE(SUM(ms.yellow_cards), 0)::int as "yellowCards",
-          COALESCE(SUM(ms.red_cards), 0)::int as "redCards",
-          COUNT(DISTINCT ms.match_id)::int as "matchesPlayed",
-          COALESCE(SUM(ms.minutes_played), 0)::int as "totalMinutes"
-        FROM players p
-        JOIN teams t ON p.team_id = t.id
-        LEFT JOIN match_statistics ms ON p.id = ms.player_id
-        LEFT JOIN matches m ON ms.match_id = m.id
-        WHERE m.tournament_id = ${tournamentId} AND m.status = 'finished'
-        GROUP BY p.id, p.first_name, p.last_name, t.name
+          player_id as "playerId",
+          first_name as "firstName",
+          last_name as "lastName",
+          team_name as "teamName",
+          goals::int as goals,
+          assists::int as assists,
+          yellow_cards::int as "yellowCards",
+          red_cards::int as "redCards",
+          matches_played::int as "matchesPlayed",
+          0::int as "totalMinutes"
+        FROM player_stats
+        WHERE matches_played > 0
         ORDER BY goals DESC, assists DESC
         LIMIT ${limit}
       `;
@@ -474,33 +500,63 @@ export class MatchStatisticsPrismaAdapter implements IMatchStatisticsDataSource 
 
   async getTeamTournamentStats(tournamentId: number): Promise<TeamTournamentStats[]> {
     try {
-      // Query SQL para obtener estadísticas de equipos
+      // Query SQL para obtener estadísticas de equipos usando match_events
       const stats = await this.prisma.$queryRaw<TeamTournamentStats[]>`
-        WITH team_match_results AS (
+        WITH team_goals AS (
+          -- Obtener goles de cada equipo por partido (excluyendo partidos scheduled)
+          SELECT 
+            m.id as match_id,
+            m.home_team_id,
+            m.away_team_id,
+            COALESCE(home_goals.goals, 0) as home_goals,
+            COALESCE(away_goals.goals, 0) as away_goals
+          FROM matches m
+          LEFT JOIN (
+            SELECT 
+              me.match_id,
+              COUNT(*) as goals
+            FROM match_events me
+            JOIN players p ON me.player_id = p.id
+            JOIN matches m2 ON me.match_id = m2.id
+            WHERE me.event_type = 'goal' 
+              AND p.team_id = m2.home_team_id
+              AND m2.status NOT IN ('scheduled', 'not_started')
+            GROUP BY me.match_id
+          ) home_goals ON m.id = home_goals.match_id
+          LEFT JOIN (
+            SELECT 
+              me.match_id,
+              COUNT(*) as goals
+            FROM match_events me
+            JOIN players p ON me.player_id = p.id
+            JOIN matches m2 ON me.match_id = m2.id
+            WHERE me.event_type = 'goal' 
+              AND p.team_id = m2.away_team_id
+              AND m2.status != 'scheduled'
+            GROUP BY me.match_id
+          ) away_goals ON m.id = away_goals.match_id
+          WHERE m.tournament_id = ${tournamentId}
+            AND m.status != 'scheduled'
+        ),
+        team_match_results AS (
           SELECT 
             t.id as team_id,
             t.name as team_name,
-            m.id as match_id,
-            m.home_score,
-            m.away_score,
+            tg.match_id,
             CASE 
-              WHEN t.id = m.home_team_id THEN 'home'
+              WHEN t.id = tg.home_team_id THEN 'home'
               ELSE 'away'
             END as team_position,
             CASE 
-              WHEN t.id = m.home_team_id THEN m.home_score
-              ELSE m.away_score
+              WHEN t.id = tg.home_team_id THEN tg.home_goals
+              ELSE tg.away_goals
             END as goals_for,
             CASE 
-              WHEN t.id = m.home_team_id THEN m.away_score
-              ELSE m.home_score
+              WHEN t.id = tg.home_team_id THEN tg.away_goals
+              ELSE tg.home_goals
             END as goals_against
           FROM teams t
-          JOIN matches m ON (t.id = m.home_team_id OR t.id = m.away_team_id)
-          WHERE m.tournament_id = ${tournamentId} 
-            AND m.status = 'finished'
-            AND m.home_score IS NOT NULL 
-            AND m.away_score IS NOT NULL
+          JOIN team_goals tg ON (t.id = tg.home_team_id OR t.id = tg.away_team_id)
         )
         SELECT 
           team_id as "teamId",
@@ -541,24 +597,50 @@ export class MatchStatisticsPrismaAdapter implements IMatchStatisticsDataSource 
   async getTopScorers(tournamentId: number, limit = 10): Promise<PlayerTournamentStats[]> {
     try {
       const stats = await this.prisma.$queryRaw<PlayerTournamentStats[]>`
+        WITH player_goals AS (
+          SELECT 
+            p.id as player_id,
+            p.first_name,
+            p.last_name,
+            t.name as team_name,
+            me.match_id,
+            me.event_type
+          FROM players p
+          JOIN teams t ON p.team_id = t.id
+          LEFT JOIN match_events me ON p.id = me.player_id
+          LEFT JOIN matches m ON me.match_id = m.id
+          WHERE m.tournament_id = ${tournamentId} 
+            AND m.status != 'scheduled'
+            AND me.event_type IN ('goal', 'assist', 'yellow_card', 'red_card')
+        ),
+        player_stats AS (
+          SELECT 
+            player_id,
+            first_name,
+            last_name,
+            team_name,
+            COUNT(DISTINCT match_id) as matches_played,
+            COUNT(CASE WHEN event_type = 'goal' THEN 1 END) as goals,
+            COUNT(CASE WHEN event_type = 'assist' THEN 1 END) as assists,
+            COUNT(CASE WHEN event_type = 'yellow_card' THEN 1 END) as yellow_cards,
+            COUNT(CASE WHEN event_type = 'red_card' THEN 1 END) as red_cards
+          FROM player_goals
+          WHERE player_id IS NOT NULL
+          GROUP BY player_id, first_name, last_name, team_name
+        )
         SELECT 
-          p.id as "playerId",
-          p.first_name as "firstName",
-          p.last_name as "lastName",
-          t.name as "teamName",
-          COALESCE(SUM(ms.goals), 0)::int as goals,
-          COALESCE(SUM(ms.assists), 0)::int as assists,
-          COALESCE(SUM(ms.yellow_cards), 0)::int as "yellowCards",
-          COALESCE(SUM(ms.red_cards), 0)::int as "redCards",
-          COUNT(DISTINCT ms.match_id)::int as "matchesPlayed",
-          COALESCE(SUM(ms.minutes_played), 0)::int as "totalMinutes"
-        FROM players p
-        JOIN teams t ON p.team_id = t.id
-        LEFT JOIN match_statistics ms ON p.id = ms.player_id
-        LEFT JOIN matches m ON ms.match_id = m.id
-        WHERE m.tournament_id = ${tournamentId} AND m.status = 'finished'
-        GROUP BY p.id, p.first_name, p.last_name, t.name
-        HAVING SUM(ms.goals) > 0
+          player_id as "playerId",
+          first_name as "firstName",
+          last_name as "lastName",
+          team_name as "teamName",
+          goals::int as goals,
+          assists::int as assists,
+          yellow_cards::int as "yellowCards",
+          red_cards::int as "redCards",
+          matches_played::int as "matchesPlayed",
+          0::int as "totalMinutes"
+        FROM player_stats
+        WHERE goals > 0
         ORDER BY goals DESC, assists DESC
         LIMIT ${limit}
       `;
@@ -573,24 +655,50 @@ export class MatchStatisticsPrismaAdapter implements IMatchStatisticsDataSource 
   async getTopAssists(tournamentId: number, limit = 10): Promise<PlayerTournamentStats[]> {
     try {
       const stats = await this.prisma.$queryRaw<PlayerTournamentStats[]>`
+        WITH player_assists AS (
+          SELECT 
+            p.id as player_id,
+            p.first_name,
+            p.last_name,
+            t.name as team_name,
+            me.match_id,
+            me.event_type
+          FROM players p
+          JOIN teams t ON p.team_id = t.id
+          LEFT JOIN match_events me ON p.id = me.player_id
+          LEFT JOIN matches m ON me.match_id = m.id
+          WHERE m.tournament_id = ${tournamentId} 
+            AND m.status != 'scheduled'
+            AND me.event_type IN ('goal', 'assist', 'yellow_card', 'red_card')
+        ),
+        player_stats AS (
+          SELECT 
+            player_id,
+            first_name,
+            last_name,
+            team_name,
+            COUNT(DISTINCT match_id) as matches_played,
+            COUNT(CASE WHEN event_type = 'goal' THEN 1 END) as goals,
+            COUNT(CASE WHEN event_type = 'assist' THEN 1 END) as assists,
+            COUNT(CASE WHEN event_type = 'yellow_card' THEN 1 END) as yellow_cards,
+            COUNT(CASE WHEN event_type = 'red_card' THEN 1 END) as red_cards
+          FROM player_assists
+          WHERE player_id IS NOT NULL
+          GROUP BY player_id, first_name, last_name, team_name
+        )
         SELECT 
-          p.id as "playerId",
-          p.first_name as "firstName",
-          p.last_name as "lastName",
-          t.name as "teamName",
-          COALESCE(SUM(ms.goals), 0)::int as goals,
-          COALESCE(SUM(ms.assists), 0)::int as assists,
-          COALESCE(SUM(ms.yellow_cards), 0)::int as "yellowCards",
-          COALESCE(SUM(ms.red_cards), 0)::int as "redCards",
-          COUNT(DISTINCT ms.match_id)::int as "matchesPlayed",
-          COALESCE(SUM(ms.minutes_played), 0)::int as "totalMinutes"
-        FROM players p
-        JOIN teams t ON p.team_id = t.id
-        LEFT JOIN match_statistics ms ON p.id = ms.player_id
-        LEFT JOIN matches m ON ms.match_id = m.id
-        WHERE m.tournament_id = ${tournamentId} AND m.status = 'finished'
-        GROUP BY p.id, p.first_name, p.last_name, t.name
-        HAVING SUM(ms.assists) > 0
+          player_id as "playerId",
+          first_name as "firstName",
+          last_name as "lastName",
+          team_name as "teamName",
+          goals::int as goals,
+          assists::int as assists,
+          yellow_cards::int as "yellowCards",
+          red_cards::int as "redCards",
+          matches_played::int as "matchesPlayed",
+          0::int as "totalMinutes"
+        FROM player_stats
+        WHERE assists > 0
         ORDER BY assists DESC, goals DESC
         LIMIT ${limit}
       `;
