@@ -192,10 +192,6 @@ export class MatchEventService {
       throw new NotFoundError('Associated match not found');
     }
 
-    if (match.status === MatchStatus.FINISHED) {
-      throw new ValidationError('Cannot remove events from finished matches');
-    }
-
     // Revertir estadísticas del evento
     await this.updateStatisticsFromEvent(existingEvent, 'remove');
 
