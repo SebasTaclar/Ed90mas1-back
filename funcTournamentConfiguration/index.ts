@@ -1,6 +1,6 @@
 import { Context, HttpRequest } from '@azure/functions';
 import { Logger } from '../src/shared/Logger';
-import { withApiHandler } from '../src/shared/apiHandler';
+import { withApiHandler, withAuthenticatedApiHandler } from '../src/shared/apiHandler';
 import { ApiResponseBuilder } from '../src/shared/ApiResponse';
 import { getTournamentConfigurationService } from '../src/shared/serviceProvider';
 
@@ -89,4 +89,4 @@ const funcTournamentConfiguration = async (
   }
 };
 
-export default withApiHandler(funcTournamentConfiguration);
+export default withAuthenticatedApiHandler(funcTournamentConfiguration);
