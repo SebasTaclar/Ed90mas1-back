@@ -2,6 +2,7 @@ import { IMatchDataSource } from '../../domain/interfaces/IMatchDataSource';
 import { IMatchEventDataSource } from '../../domain/interfaces/IMatchEventDataSource';
 import { IMatchStatisticsDataSource } from '../../domain/interfaces/IMatchStatisticsDataSource';
 import { ITournamentConfigurationDataSource } from '../../domain/interfaces/ITournamentConfigurationDataSource';
+import { FirebaseService } from '../../services/FirebaseService';
 import {
   Match,
   CreateMatchRequest,
@@ -20,6 +21,7 @@ export class MatchService {
     private matchEventDataSource: IMatchEventDataSource,
     private matchStatisticsDataSource: IMatchStatisticsDataSource,
     private tournamentConfigurationDataSource: ITournamentConfigurationDataSource,
+    private firebaseService: FirebaseService,
     private logger: Logger
   ) {}
 
@@ -200,6 +202,22 @@ export class MatchService {
       throw new NotFoundError('Failed to start match');
     }
 
+    // NUEVA FUNCIONALIDAD: Notificar inicio del partido vía Firebase
+    try {
+      await this.firebaseService.sendMatchNotification(
+        matchId,
+        'match_started',
+        'Match has started',
+        {
+          status: 'in_progress',
+          timestamp: new Date().toISOString(),
+        }
+      );
+    } catch (firebaseError) {
+      this.logger.logError('Failed to sync match start to Firebase', firebaseError);
+      // No bloqueamos el flujo principal si Firebase falla
+    }
+
     this.logger.logInfo('MatchService: Match started successfully', { matchId });
     return updatedMatch;
   }
@@ -227,6 +245,23 @@ export class MatchService {
 
     if (!updatedMatch) {
       throw new NotFoundError('Failed to finish match');
+    }
+
+    // NUEVA FUNCIONALIDAD: Notificar finalización del partido vía Firebase
+    try {
+      await this.firebaseService.sendMatchNotification(
+        matchId,
+        'match_finished',
+        'Match has finished',
+        {
+          status: 'finished',
+          timestamp: new Date().toISOString(),
+          finalScore: { home: updatedMatch.homeScore, away: updatedMatch.awayScore },
+        }
+      );
+    } catch (firebaseError) {
+      this.logger.logError('Failed to sync match finish to Firebase', firebaseError);
+      // No bloqueamos el flujo principal si Firebase falla
     }
 
     this.logger.logInfo('MatchService: Match finished successfully', { matchId });

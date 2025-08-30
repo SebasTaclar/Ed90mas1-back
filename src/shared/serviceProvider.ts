@@ -10,6 +10,7 @@ import { MatchService } from '../application/services/MatchService';
 import { MatchEventService } from '../application/services/MatchEventService';
 import { MatchStatisticsService } from '../application/services/MatchStatisticsService';
 import { BlobStorageService } from './BlobStorageService';
+import { FirebaseService } from '../services/FirebaseService';
 import { UserPrismaAdapter } from '../infrastructure/DbAdapters/UserPrismaAdapter';
 import { CategoryPrismaAdapter } from '../infrastructure/DbAdapters/CategoryPrismaAdapter';
 import { TournamentPrismaAdapter } from '../infrastructure/DbAdapters/TournamentPrismaAdapter';
@@ -192,11 +193,13 @@ export class ServiceProvider {
     const matchEventDataSource = this.getMatchEventDataSource(logger);
     const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
     const tournamentConfigDataSource = this.getTournamentConfigurationDataSource(logger);
+    const firebaseService = this.getFirebaseService(logger);
     return new MatchService(
       matchDataSource,
       matchEventDataSource,
       matchStatisticsDataSource,
       tournamentConfigDataSource,
+      firebaseService,
       logger
     );
   }
@@ -209,10 +212,12 @@ export class ServiceProvider {
     const matchEventDataSource = this.getMatchEventDataSource(logger);
     const matchDataSource = this.getMatchDataSource(logger);
     const matchStatisticsDataSource = this.getMatchStatisticsDataSource(logger);
+    const firebaseService = this.getFirebaseService(logger);
     return new MatchEventService(
       matchEventDataSource,
       matchDataSource,
       matchStatisticsDataSource,
+      firebaseService,
       logger
     );
   }
@@ -232,6 +237,14 @@ export class ServiceProvider {
    */
   static getBlobStorageService(logger: Logger): BlobStorageService {
     return new BlobStorageService(logger);
+  }
+
+  /**
+   * Crea una instancia de FirebaseService
+   */
+  static getFirebaseService(logger: Logger): FirebaseService {
+    console.log('🔄 Creating new FirebaseService instance');
+    return new FirebaseService(logger);
   }
 }
 
@@ -284,4 +297,8 @@ export const getMatchStatisticsService = (logger: Logger): MatchStatisticsServic
 
 export const getBlobStorageService = (logger: Logger): BlobStorageService => {
   return ServiceProvider.getBlobStorageService(logger);
+};
+
+export const getFirebaseService = (logger: Logger): FirebaseService => {
+  return ServiceProvider.getFirebaseService(logger);
 };

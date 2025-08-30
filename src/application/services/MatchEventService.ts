@@ -1,6 +1,7 @@
 import { IMatchEventDataSource } from '../../domain/interfaces/IMatchEventDataSource';
 import { IMatchDataSource } from '../../domain/interfaces/IMatchDataSource';
 import { IMatchStatisticsDataSource } from '../../domain/interfaces/IMatchStatisticsDataSource';
+import { FirebaseService } from '../../services/FirebaseService';
 import {
   MatchEvent,
   CreateMatchEventRequest,
@@ -17,6 +18,7 @@ export class MatchEventService {
     private matchEventDataSource: IMatchEventDataSource,
     private matchDataSource: IMatchDataSource,
     private matchStatisticsDataSource: IMatchStatisticsDataSource,
+    private firebaseService: FirebaseService,
     private logger: Logger
   ) {}
 
@@ -42,6 +44,25 @@ export class MatchEventService {
       request.eventType === MatchEventType.OWN_GOAL
     ) {
       await this.updateMatchScore(request.matchId);
+    }
+
+    // NUEVA FUNCIONALIDAD: Sincronizar con Firebase
+    try {
+      // Obtener el evento con relaciones para enviar a Firebase
+      const eventWithRelations = await this.matchEventDataSource.findById(event.id);
+      if (eventWithRelations) {
+        await this.firebaseService.syncMatchEvent(eventWithRelations);
+      }
+
+      // Si afectó el marcador, sincronizar datos del partido
+      // Ya no sincronizamos datos del partido - solo el evento específico
+      // El frontend calculará el marcador desde los eventos
+    } catch (firebaseError) {
+      this.logger.logError(
+        'Failed to sync event to Firebase, but event was created successfully',
+        firebaseError
+      );
+      // No bloqueamos el flujo principal si Firebase falla
     }
 
     this.logger.logInfo('MatchEventService: Event added successfully', {
@@ -169,6 +190,21 @@ export class MatchEventService {
       await this.updateMatchScore(existingEvent.matchId);
     }
 
+    // NUEVA FUNCIONALIDAD: Sincronizar con Firebase
+    try {
+      // Obtener el evento actualizado con relaciones
+      const eventWithRelations = await this.matchEventDataSource.findById(id);
+      if (eventWithRelations) {
+        await this.firebaseService.syncMatchEvent(eventWithRelations);
+      }
+
+      // Ya no sincronizamos datos del partido después de actualizar eventos
+      // Solo el evento actualizado es sincronizado arriba
+    } catch (firebaseError) {
+      this.logger.logError('Failed to sync updated event to Firebase', firebaseError);
+      // No bloqueamos el flujo principal si Firebase falla
+    }
+
     this.logger.logInfo('MatchEventService: Event updated successfully', { id });
     return updatedEvent;
   }
@@ -206,6 +242,18 @@ export class MatchEventService {
     ];
     if (affectsScore.includes(existingEvent.eventType as MatchEventType)) {
       await this.updateMatchScore(existingEvent.matchId);
+    }
+
+    // NUEVA FUNCIONALIDAD: Sincronizar con Firebase
+    try {
+      // Remover el evento de Firebase
+      await this.firebaseService.removeMatchEvent(existingEvent.matchId, id);
+
+      // Ya no sincronizamos datos del partido después de eliminar eventos
+      // El frontend calculará el marcador desde los eventos restantes
+    } catch (firebaseError) {
+      this.logger.logError('Failed to sync event deletion to Firebase', firebaseError);
+      // No bloqueamos el flujo principal si Firebase falla
     }
 
     this.logger.logInfo('MatchEventService: Event removed successfully', { id });
